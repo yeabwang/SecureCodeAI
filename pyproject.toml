@@ -1,0 +1,124 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "securecodeai"
+version = "0.1.0"
+description = "AI-powered security analysis tool with static analysis and LLM integration"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "yeabwang", email = "yeabsiratesfaye781@gmail.com"}
+]
+keywords = ["security", "static-analysis", "llm", "vulnerability", "code-analysis"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+dependencies = [
+    # Static Analysis Tools
+    "bandit>=1.7.5",
+    "safety>=3.0.0",
+    "semgrep>=1.45.0",
+    
+    # LLM Integration
+    "groq>=0.4.0",
+    "tiktoken>=0.5.0",
+    
+    # Core Dependencies
+    "pydantic>=2.5.0",
+    "pyyaml>=6.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "jinja2>=3.1.0",
+    
+    # File Processing
+    "tree-sitter>=0.20.0",
+    "gitpython>=3.1.0",
+    
+    # Output Formats
+    "sarif-om>=1.0.4",
+    
+    # Utilities
+    "requests>=2.31.0",
+    "tenacity>=8.2.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "isort>=5.12.0",
+    "pre-commit>=3.4.0",
+]
+
+test = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[project.scripts]
+securecodeai = "securecodeai.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/yeabwang/securecodeai"
+Repository = "https://github.com/yeabwang/securecodeai"
+Issues = "https://github.com/yeabwang/securecodeai/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=src/securecodeai --cov-report=html --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/securecodeai"]
+omit = ["tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
