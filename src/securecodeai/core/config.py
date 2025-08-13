@@ -4,7 +4,7 @@ import os
 import yaml
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from dotenv import load_dotenv
 
 from .models import SeverityLevel, VulnerabilityType, SourceTool, ScanMode, OutputFormat
@@ -59,13 +59,12 @@ class LLMConfig(BaseModel):
     enable_cross_validation: bool = True
     minimum_confidence_threshold: float = 0.3
     
-    @field_validator('api_key', mode='before')
-    @classmethod
-    def load_api_key(cls, v):
-        """Load API key from environment if not provided."""
-        if v is None:
-            return os.getenv('GROQ_API_KEY') or os.getenv('GROQ_API')
-        return v
+    @model_validator(mode='after')
+    def load_api_key_from_env(self):
+        """Load API key from environment if not configured."""
+        if self.api_key is None:
+            self.api_key = os.getenv('GROQ_API_KEY') or os.getenv('GROQ_API')
+        return self
 
 
 class ScanConfig(BaseModel):
