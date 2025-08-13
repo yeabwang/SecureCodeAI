@@ -120,7 +120,7 @@ class SemgrepAnalyzer(BaseStaticAnalyzer):
     
     def _parse_semgrep_output(self, output: str) -> List[Finding]:
         """Parse semgrep JSON output into Finding objects."""
-        findings = []
+        findings: List[Finding] = []
         
         try:
             if not output.strip():

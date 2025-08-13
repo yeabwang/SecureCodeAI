@@ -60,7 +60,7 @@ class LLMConfig(BaseModel):
     minimum_confidence_threshold: float = 0.3
     
     @model_validator(mode='after')
-    def load_api_key_from_env(self):
+    def load_api_key_from_env(self) -> 'LLMConfig':
         """Load API key from environment if not configured."""
         if self.api_key is None:
             self.api_key = os.getenv('GROQ_API_KEY') or os.getenv('GROQ_API')
@@ -271,7 +271,7 @@ class Config(BaseModel):
         
         return issues
     
-    def merge_with_cli_args(self, **cli_args) -> "Config":
+    def merge_with_cli_args(self, **cli_args: Any) -> "Config":
         """Merge configuration with CLI arguments."""
         # Create a copy of current config
         config_dict = self.model_dump()

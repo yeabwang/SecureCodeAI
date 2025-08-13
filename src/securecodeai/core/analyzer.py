@@ -143,7 +143,7 @@ class SecurityAnalyzer:
                          static_findings: List[Finding],
                          target_paths: List[Path]) -> List[Finding]:
         """Run LLM-based analysis."""
-        llm_findings = []
+        llm_findings: List[Finding] = []
         
         if not self.llm_client:
             return llm_findings
@@ -167,7 +167,7 @@ class SecurityAnalyzer:
     
     def _validate_findings_with_llm(self, findings: List[Finding]) -> List[Finding]:
         """Validate static analysis findings with LLM."""
-        validated = []
+        validated: List[Finding] = []
         
         # Check if LLM client is available
         if not self.llm_client:
@@ -238,7 +238,7 @@ RESPOND ONLY WITH VALID JSON (no extra text):
                     
                     if llm_analysis.get('valid', False):
                         # Create a new finding with enhanced content
-                        enhanced_finding = finding.copy(deep=True)
+                        enhanced_finding = finding.model_copy(deep=True)
                         enhanced_finding.confidence = min(1.0, finding.confidence + 0.1)
                         
                         # Clean and set remediation advice

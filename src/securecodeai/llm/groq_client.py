@@ -3,7 +3,7 @@
 import os
 import time
 import logging
-from typing import Dict, List, Optional, Any, Union
+from typing import Dict, List, Optional, Any, Union, Tuple
 from dataclasses import dataclass
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import tiktoken
@@ -69,7 +69,7 @@ class GroqClient:
         self.requests_per_minute = requests_per_minute
         self.tokens_per_minute = tokens_per_minute
         self._request_times: List[float] = []
-        self._token_usage: List[tuple[float, int]] = []  # (timestamp, tokens)
+        self._token_usage: List[Tuple[float, int]] = []  # (timestamp, tokens)
         
         # Initialize client
         self.client = Groq(api_key=self.api_key)
@@ -156,10 +156,10 @@ class GroqClient:
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_if_exception_type((RateLimitError, ConnectionError))
     )
-    def _make_request(self, messages: List[ChatCompletionMessageParam], **kwargs) -> ChatCompletion:
+    def _make_request(self, messages: List[ChatCompletionMessageParam], **kwargs: Any) -> ChatCompletion:
         """Make a request to Groq API with retries."""
         try:
-            response = self.client.chat.completions.create(
+            response: ChatCompletion = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=kwargs.get('max_tokens', self.max_tokens),
@@ -179,7 +179,7 @@ class GroqClient:
     
     def chat_completion(self, 
                        messages: List[Dict[str, str]],
-                       **kwargs) -> LLMResponse:
+                       **kwargs: Any) -> LLMResponse:
         """Send a chat completion request."""
         start_time = time.time()
         
@@ -215,7 +215,10 @@ class GroqClient:
             # Make the request
             response = self._make_request(formatted_messages, **kwargs)
             
-            # Extract response data
+            # Extract response data - defensive check for empty choices
+            if not response.choices:
+                raise Exception("Groq API returned empty choices array")
+            
             content = response.choices[0].message.content or ""
             finish_reason = response.choices[0].finish_reason
             
@@ -253,7 +256,7 @@ class GroqClient:
             self.logger.error(f"Groq request failed after {response_time:.2f}s: {e}")
             raise
     
-    def simple_completion(self, prompt: str, **kwargs) -> str:
+    def simple_completion(self, prompt: str, **kwargs: Any) -> str:
         """Simple text completion."""
         messages = [{"role": "user", "content": prompt}]
         response = self.chat_completion(messages, **kwargs)
@@ -263,7 +266,7 @@ class GroqClient:
                     code: str,
                     context: str = "",
                     analysis_type: str = "security",
-                    **kwargs) -> LLMResponse:
+                    **kwargs: Any) -> LLMResponse:
         """Analyze code for security issues."""
         
         system_prompt = self._get_analysis_system_prompt(analysis_type)

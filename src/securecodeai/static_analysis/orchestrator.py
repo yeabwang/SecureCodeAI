@@ -1,7 +1,7 @@
 """Static analysis orchestrator that combines multiple tools."""
 
 import logging
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Set, Optional, Any
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
@@ -30,7 +30,7 @@ class StaticAnalysisOrchestrator:
     
     def _initialize_analyzers(self) -> None:
         """Initialize available static analysis tools."""
-        analyzer_configs = {
+        analyzer_configs: Dict[str, Dict[str, Any]] = {
             'bandit': {
                 'skip_tests': self.config.bandit_skip_tests,
                 'exclude_paths': self.config.bandit_exclude_paths,
@@ -211,7 +211,7 @@ class StaticAnalysisOrchestrator:
         new_confidence = min(1.0, primary.confidence + confidence_boost)
         
         # Create new finding with merged information
-        merged = primary.copy(deep=True)
+        merged = primary.model_copy(deep=True)
         merged.confidence = new_confidence
         merged.metadata = merged_metadata
         
@@ -231,7 +231,7 @@ class StaticAnalysisOrchestrator:
             info[name] = {
                 'name': analyzer.get_tool_name(),
                 'version': analyzer.get_version() or 'Unknown',
-                'available': analyzer.is_available(),
+                'available': str(analyzer.is_available()),  # Convert bool to string
                 'supported_extensions': ', '.join(analyzer.get_supported_extensions()),
             }
         

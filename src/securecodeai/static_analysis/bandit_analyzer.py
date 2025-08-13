@@ -117,7 +117,7 @@ class BanditAnalyzer(BaseStaticAnalyzer):
     
     def _parse_bandit_output(self, output: str) -> List[Finding]:
         """Parse bandit JSON output into Finding objects."""
-        findings = []
+        findings: List[Finding] = []
         
         try:
             if not output.strip():

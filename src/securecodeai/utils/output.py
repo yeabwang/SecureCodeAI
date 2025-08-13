@@ -1,7 +1,7 @@
 """Output formatting utilities."""
 
 import json
-from typing import Dict, Any
+from typing import Dict, Any, List
 from pathlib import Path
 from datetime import datetime
 
@@ -105,7 +105,7 @@ class OutputFormatter:
         data = result.dict()
         
         # Convert Path objects to strings
-        def convert_paths(obj):
+        def convert_paths(obj: Any) -> Any:
             if isinstance(obj, dict):
                 return {k: convert_paths(v) for k, v in obj.items()}
             elif isinstance(obj, list):
@@ -140,7 +140,8 @@ class OutputFormatter:
             ]
         }
         
-        run = sarif["runs"][0]
+        run: Dict[str, Any] = sarif["runs"][0]  # type: ignore
+        # The sarif structure is controlled by us, so this cast is safe
         
         # Add rules (unique vulnerability types found)
         rules_seen = set()
@@ -178,7 +179,7 @@ class OutputFormatter:
                 'critical': 'error'
             }.get(finding.severity.value, 'warning')
             
-            result_obj = {
+            result_obj: Dict[str, Any] = {
                 "ruleId": finding.vulnerability_type.value,
                 "message": {
                     "text": finding.description
@@ -200,9 +201,16 @@ class OutputFormatter:
             }
             
             if finding.code_snippet:
-                result_obj["locations"][0]["physicalLocation"]["region"]["snippet"] = {
-                    "text": finding.code_snippet
-                }
+                # Type assertion to help mypy understand the structure
+                locations = result_obj["locations"]
+                if isinstance(locations, list) and len(locations) > 0:
+                    location = locations[0]
+                    if isinstance(location, dict) and "physicalLocation" in location:
+                        phys_loc = location["physicalLocation"]
+                        if isinstance(phys_loc, dict) and "region" in phys_loc:
+                            phys_loc["region"]["snippet"] = {
+                                "text": finding.code_snippet
+                            }
             
             run["results"].append(result_obj)
         

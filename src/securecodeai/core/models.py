@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 from pathlib import Path
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 import uuid
 
 
@@ -91,7 +91,7 @@ class Location(BaseModel):
     
     @field_validator('end_line')
     @classmethod
-    def validate_end_line(cls, v, info):
+    def validate_end_line(cls, v: Optional[int], info: ValidationInfo) -> Optional[int]:
         if v is not None and 'start_line' in info.data and v < info.data['start_line']:
             raise ValueError('end_line must be >= start_line')
         return v
@@ -127,22 +127,34 @@ class Finding(BaseModel):
     
     @field_validator('confidence_level', mode='before')
     @classmethod
-    def set_confidence_level(cls, v, info):
+    def set_confidence_level(cls, v: Optional[Union[str, ConfidenceLevel]], info: ValidationInfo) -> ConfidenceLevel:
         """Automatically set confidence level based on confidence score."""
-        if 'confidence' not in info.data:
-            return v
-            
-        confidence = info.data['confidence']
-        if confidence >= 0.9:
-            return ConfidenceLevel.VERY_HIGH
-        elif confidence >= 0.7:
-            return ConfidenceLevel.HIGH
-        elif confidence >= 0.5:
-            return ConfidenceLevel.MEDIUM
-        elif confidence >= 0.3:
-            return ConfidenceLevel.LOW
-        else:
-            return ConfidenceLevel.VERY_LOW
+        # Always calculate from confidence score if available, ignore provided value
+        if 'confidence' in info.data:
+            confidence = info.data['confidence']
+            if confidence >= 0.9:
+                return ConfidenceLevel.VERY_HIGH
+            elif confidence >= 0.7:
+                return ConfidenceLevel.HIGH
+            elif confidence >= 0.5:
+                return ConfidenceLevel.MEDIUM
+            elif confidence >= 0.3:
+                return ConfidenceLevel.LOW
+            else:
+                return ConfidenceLevel.VERY_LOW
+        
+        # Fallback: use provided value or default
+        if v is not None:
+            if isinstance(v, ConfidenceLevel):
+                return v
+            if isinstance(v, str):
+                try:
+                    return ConfidenceLevel(v)
+                except ValueError:
+                    pass
+        
+        # Default value if no confidence score available
+        return ConfidenceLevel.MEDIUM
 
 
 class AnalysisResult(BaseModel):
@@ -178,14 +190,14 @@ class AnalysisResult(BaseModel):
     
     @field_validator('duration_seconds', mode='before')
     @classmethod
-    def calculate_duration(cls, v, info):
+    def calculate_duration(cls, v: Optional[float], info: ValidationInfo) -> Optional[float]:
         """Calculate duration if end_time is set."""
         if v is not None:
-            return v
+            return float(v) if v is not None else None
         if 'end_time' in info.data and info.data['end_time'] and 'start_time' in info.data:
             delta = info.data['end_time'] - info.data['start_time']
-            return delta.total_seconds()
-        return v
+            return float(delta.total_seconds())
+        return None
     
     def add_finding(self, finding: Finding) -> None:
         """Add a finding and update statistics."""

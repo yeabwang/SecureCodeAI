@@ -88,7 +88,7 @@ class SafetyAnalyzer(BaseStaticAnalyzer):
             return self._run_safety_on_environment()
         
         # Analyze each requirements file
-        all_findings = []
+        all_findings: List[Finding] = []
         for req_file in requirements_files:
             findings = self._run_safety_on_file(req_file)
             all_findings.extend(findings)
@@ -198,7 +198,7 @@ class SafetyAnalyzer(BaseStaticAnalyzer):
     
     def _parse_safety_output(self, output: str, source_file: Path) -> List[Finding]:
         """Parse safety JSON output into Finding objects."""
-        findings = []
+        findings: List[Finding] = []
         
         try:
             if not output.strip():
