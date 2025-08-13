@@ -1,4 +1,4 @@
-# SecureCodeAI - : Core Foundation & Static Analysis Engine
+# SecureCodeAI
 
 **Production-ready security analysis tool combining multi-tool static analysis with AI-powered enhancement.**
 
@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-## 🎯 What  Delivers
+## 🎯 What it  Delivers
 
 A robust, production-tested security analysis foundation with:
 - **Multi-tool static analysis** (Bandit, SafetyFPR, Semgrep)
@@ -25,7 +25,7 @@ A robust, production-tested security analysis foundation with:
 
 ```bash
 # Clone and install
-git clone <repository-url>
+git clone https://github.com/yeabwang/SecureCodeAI.git
 cd SecureCodeAI
 pip install -e .
 ```
