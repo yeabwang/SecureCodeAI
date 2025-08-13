@@ -1,6 +1,3 @@
-# Project planning files (not for version control)
-project_plan.md
-
 # Environment files
 .env
 .env.local
