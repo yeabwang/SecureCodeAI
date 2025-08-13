@@ -2,11 +2,6 @@
 
 **Security analysis tool combining multi-tool static analysis with AI-powered enhancement.**
 
-![Tests](https://img.shields.io/badge/tests-29%2F29%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-58%25-yellow)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-
 ## 🎯 What it  Delivers
 
 A robust security analysis foundation with:
