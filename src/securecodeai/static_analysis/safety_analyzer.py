@@ -130,8 +130,7 @@ class SafetyAnalyzer(BaseStaticAnalyzer):
                 for ignore_id in self.config['ignore_ids']:
                     cmd.extend(["--ignore", str(ignore_id)])
             
-            if self.config.get('db_update', True):
-                cmd.append("--update")
+            # Note: --update option removed in Safety CLI 3.x as database updates automatically
             
             self.logger.debug(f"Running safety command: {' '.join(cmd)}")
             
@@ -142,8 +141,11 @@ class SafetyAnalyzer(BaseStaticAnalyzer):
                 timeout=120  # 2 minute timeout
             )
             
-            # Safety returns exit code 255 when vulnerabilities are found
-            if result.returncode not in [0, 255]:
+            # Safety CLI 3.x returns different exit codes:
+            # 0: No vulnerabilities found
+            # 64: Warnings (e.g., deprecated packages) but no vulnerabilities  
+            # 255: Vulnerabilities found
+            if result.returncode not in [0, 64, 255]:
                 error_msg = f"Safety failed with exit code {result.returncode}: {result.stderr}"
                 self.logger.error(error_msg)
                 raise ToolExecutionError(error_msg)
@@ -165,8 +167,7 @@ class SafetyAnalyzer(BaseStaticAnalyzer):
                 for ignore_id in self.config['ignore_ids']:
                     cmd.extend(["--ignore", str(ignore_id)])
             
-            if self.config.get('db_update', True):
-                cmd.append("--update")
+            # Note: --update option removed in Safety CLI 3.x as database updates automatically
             
             self.logger.debug(f"Running safety on environment: {' '.join(cmd)}")
             
@@ -177,7 +178,11 @@ class SafetyAnalyzer(BaseStaticAnalyzer):
                 timeout=120
             )
             
-            if result.returncode not in [0, 255]:
+            # Safety CLI 3.x returns different exit codes:
+            # 0: No vulnerabilities found
+            # 64: Warnings (e.g., deprecated packages) but no vulnerabilities  
+            # 255: Vulnerabilities found
+            if result.returncode not in [0, 64, 255]:
                 error_msg = f"Safety failed with exit code {result.returncode}: {result.stderr}"
                 self.logger.error(error_msg)
                 raise ToolExecutionError(error_msg)

@@ -1,5 +1,6 @@
 """Main security analyzer that orchestrates static analysis and LLM integration."""
 
+import json
 import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
@@ -101,6 +102,12 @@ class SecurityAnalyzer:
             result.total_files_analyzed = self._count_files_analyzed(target_paths)
             result.total_lines_analyzed = self._estimate_lines_analyzed(target_paths)
             
+            # Add LLM usage statistics
+            if self.llm_client:
+                llm_stats = self.llm_client.get_usage_stats()
+                result.llm_tokens_used = llm_stats.get('total_tokens', 0)
+                result.llm_requests_made = llm_stats.get('total_requests', 0)
+            
             # Update statistics
             result._update_statistics()
             
@@ -166,30 +173,91 @@ class SecurityAnalyzer:
         if not self.llm_client:
             return validated
         
-        # For PR0, we'll do a simple validation of high-confidence findings
-        high_confidence_findings = [f for f in findings if f.confidence >= 0.8]
+        # For PR0, we'll do enhanced validation with intelligent selection
+        # Priority order: High severity -> High confidence -> Specific vulnerability types
         
-        for finding in high_confidence_findings[:5]:  # Limit to 5 for now
+        # Sort findings by priority for LLM analysis
+        sorted_findings = sorted(findings, key=lambda f: (
+            # Priority 1: Severity (high=2, medium=1, low=0)
+            2 if f.severity.value == 'high' else 1 if f.severity.value == 'medium' else 0,
+            # Priority 2: Confidence score
+            f.confidence,
+            # Priority 3: Prefer certain vulnerability types
+            1 if f.vulnerability_type in ['command_injection', 'sql_injection', 'unsafe_deserialization'] else 0
+        ), reverse=True)
+        
+        # Process findings with dynamic limits based on severity and confidence
+        max_llm_findings = min(
+            8,  # Reasonable limit for PR0 (increased from 5)
+            len([f for f in findings if f.confidence >= 0.6])  # At least medium confidence
+        )
+        
+        for finding in sorted_findings[:max_llm_findings]:
             try:
-                # Simple validation prompt
+                # Enhanced validation and remediation prompt
                 code_context = finding.code_snippet or "No code snippet available"
                 
+                prompt = f"""You are a security expert. Analyze this vulnerability and provide actionable remediation advice.
+
+VULNERABILITY DETAILS:
+- Title: {finding.title}
+- Type: {finding.vulnerability_type}
+- Severity: {finding.severity.value}
+- Description: {finding.description}
+
+CODE:
+{code_context}
+
+INSTRUCTIONS:
+1. Validate if this is a real security issue
+2. Provide clear remediation advice (1-2 sentences)
+3. Give a specific code fix example
+
+RESPOND ONLY WITH VALID JSON (no extra text):
+{{
+  "valid": true,
+  "remediation_advice": "Clear, actionable advice here",
+  "fix_suggestion": "Specific code example or guidance"
+}}"""
+
                 response = self.llm_client.simple_completion(
-                    f"Is this a valid security concern?\n\n"
-                    f"Finding: {finding.title}\n"
-                    f"Description: {finding.description}\n"
-                    f"Code: {code_context}\n\n"
-                    f"Please respond with 'yes' or 'no' and a brief explanation.",
-                    max_tokens=100
+                    prompt,
+                    max_tokens=400
                 )
                 
-                if response.lower().startswith('yes'):
-                    # Create a new finding with enhanced confidence
-                    enhanced_finding = finding.copy(deep=True)
-                    enhanced_finding.confidence = min(1.0, finding.confidence + 0.1)
-                    enhanced_finding.metadata['llm_validated'] = True
-                    enhanced_finding.metadata['llm_response'] = response
-                    validated.append(enhanced_finding)
+                # Clean response - remove any markdown or extra formatting
+                cleaned_response = response.strip()
+                if cleaned_response.startswith('```json'):
+                    cleaned_response = cleaned_response.replace('```json', '').replace('```', '').strip()
+                if cleaned_response.startswith('```'):
+                    cleaned_response = cleaned_response.replace('```', '').strip()
+                
+                # Parse JSON response
+                try:
+                    llm_analysis = json.loads(cleaned_response)
+                    
+                    if llm_analysis.get('valid', False):
+                        # Create a new finding with enhanced content
+                        enhanced_finding = finding.copy(deep=True)
+                        enhanced_finding.confidence = min(1.0, finding.confidence + 0.1)
+                        
+                        # Clean and set remediation advice
+                        remediation = llm_analysis.get('remediation_advice', '').strip()
+                        fix_suggestion = llm_analysis.get('fix_suggestion', '').strip()
+                        
+                        enhanced_finding.remediation_advice = remediation if remediation else None
+                        enhanced_finding.fix_suggestion = fix_suggestion if fix_suggestion else None
+                        enhanced_finding.metadata['llm_validated'] = True
+                        enhanced_finding.metadata['llm_confidence_boost'] = 0.1
+                        validated.append(enhanced_finding)
+                        
+                except json.JSONDecodeError as e:
+                    # Better fallback: try to extract meaningful content
+                    self.logger.warning(f"Failed to parse LLM JSON response for finding {finding.id}: {e}")
+                    self.logger.debug(f"Raw response: {response[:200]}...")
+                    
+                    # Skip this finding rather than creating messy fallback
+                    continue
                     
             except Exception as e:
                 self.logger.warning(f"Failed to validate finding {finding.id}: {e}")

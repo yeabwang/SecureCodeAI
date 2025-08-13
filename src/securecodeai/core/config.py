@@ -279,6 +279,7 @@ class Config(BaseModel):
         
         # Map CLI arguments to config structure
         cli_mapping = {
+            'mode': 'scan.mode',
             'verbose': 'output.verbose',
             'quiet': 'output.quiet',
             'format': 'output.format',
