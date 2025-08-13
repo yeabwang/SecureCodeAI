@@ -10,6 +10,7 @@ import tiktoken
 
 from groq import Groq
 from groq.types.chat import ChatCompletion
+from groq.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,7 @@ class GroqClient:
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_if_exception_type((RateLimitError, ConnectionError))
     )
-    def _make_request(self, messages: List[Dict[str, str]], **kwargs) -> ChatCompletion:
+    def _make_request(self, messages: List[ChatCompletionMessageParam], **kwargs) -> ChatCompletion:
         """Make a request to Groq API with retries."""
         try:
             response = self.client.chat.completions.create(
@@ -186,6 +187,19 @@ class GroqClient:
         if not messages:
             raise ValueError("Messages cannot be empty")
         
+        # Convert dict messages to proper ChatCompletionMessageParam format
+        formatted_messages: List[ChatCompletionMessageParam] = []
+        for msg in messages:
+            if msg.get("role") == "system":
+                formatted_messages.append({"role": "system", "content": msg["content"]})
+            elif msg.get("role") == "user":
+                formatted_messages.append({"role": "user", "content": msg["content"]})
+            elif msg.get("role") == "assistant":
+                formatted_messages.append({"role": "assistant", "content": msg["content"]})
+            else:
+                # Default to user role if not specified
+                formatted_messages.append({"role": "user", "content": msg.get("content", "")})
+        
         # Count tokens
         input_tokens = self.count_message_tokens(messages)
         estimated_total_tokens = input_tokens + kwargs.get('max_tokens', self.max_tokens)
@@ -199,7 +213,7 @@ class GroqClient:
         
         try:
             # Make the request
-            response = self._make_request(messages, **kwargs)
+            response = self._make_request(formatted_messages, **kwargs)
             
             # Extract response data
             content = response.choices[0].message.content or ""

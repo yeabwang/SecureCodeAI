@@ -58,17 +58,35 @@ class TestConfig:
     
     def test_config_validation(self):
         """Test configuration validation."""
-        config = Config.get_default_config()
+        # Create config without environment variables
+        import os
+        old_groq_key = os.environ.get('GROQ_API_KEY')
+        old_groq_api = os.environ.get('GROQ_API')
         
-        # Valid config should have no issues
-        issues = config.validate_config()
-        # API key is not set in test environment, so expect that issue
-        assert any('API key' in issue for issue in issues)
+        # Temporarily remove API keys from environment
+        if 'GROQ_API_KEY' in os.environ:
+            del os.environ['GROQ_API_KEY']
+        if 'GROQ_API' in os.environ:
+            del os.environ['GROQ_API']
         
-        # Test invalid confidence threshold
-        config.scan.confidence_threshold = 1.5  # Invalid
-        issues = config.validate_config()
-        assert any('Confidence threshold' in issue for issue in issues)
+        try:
+            config = Config.get_default_config()
+            
+            # Valid config should have no issues except for missing API key
+            issues = config.validate_config()
+            # API key is not set in test environment, so expect that issue
+            assert any('API key' in issue for issue in issues)
+            
+            # Test invalid confidence threshold
+            config.scan.confidence_threshold = 1.5  # Invalid
+            issues = config.validate_config()
+            assert any('Confidence threshold' in issue for issue in issues)
+        finally:
+            # Restore environment variables
+            if old_groq_key:
+                os.environ['GROQ_API_KEY'] = old_groq_key
+            if old_groq_api:
+                os.environ['GROQ_API'] = old_groq_api
     
     def test_merge_with_cli_args(self):
         """Test merging config with CLI arguments."""

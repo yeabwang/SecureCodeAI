@@ -76,7 +76,7 @@ def cli(ctx, verbose: bool, quiet: bool, config: Optional[Path]):
               help='Number of parallel workers')
 @click.pass_context
 def scan(ctx, 
-         paths: tuple, 
+         paths: tuple[Path, ...], 
          mode: Optional[str],
          output_format: Optional[str],
          output: Optional[Path],
@@ -99,10 +99,11 @@ def scan(ctx,
     config = config.merge_with_cli_args(**{k: v for k, v in cli_args.items() if v is not None})
     
     # Default to current directory if no paths provided
+    target_paths: List[Path]
     if not paths:
-        paths = [Path.cwd()]
+        target_paths = [Path.cwd()]
     else:
-        paths = list(paths)
+        target_paths = list(paths)
     
     # Convert mode string to enum
     scan_mode = None
@@ -124,9 +125,9 @@ def scan(ctx,
         
         # Run analysis
         if not config.output.quiet:
-            click.echo(f"Analyzing {len(paths)} path(s)...")
+            click.echo(f"Analyzing {len(target_paths)} path(s)...")
         
-        result = analyzer.analyze(paths, mode=scan_mode)
+        result = analyzer.analyze(target_paths, mode=scan_mode)
         
         # Format and output results
         formatter = OutputFormatter(config.output)

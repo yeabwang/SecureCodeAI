@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 from pathlib import Path
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import uuid
 
 
@@ -89,9 +89,10 @@ class Location(BaseModel):
     start_column: Optional[int] = None
     end_column: Optional[int] = None
     
-    @validator('end_line')
-    def validate_end_line(cls, v, values):
-        if v is not None and 'start_line' in values and v < values['start_line']:
+    @field_validator('end_line')
+    @classmethod
+    def validate_end_line(cls, v, info):
+        if v is not None and 'start_line' in info.data and v < info.data['start_line']:
             raise ValueError('end_line must be >= start_line')
         return v
 
@@ -124,13 +125,14 @@ class Finding(BaseModel):
     remediation_advice: Optional[str] = None
     fix_suggestion: Optional[str] = None
     
-    @validator('confidence_level', always=True)
-    def set_confidence_level(cls, v, values):
+    @field_validator('confidence_level', mode='before')
+    @classmethod
+    def set_confidence_level(cls, v, info):
         """Automatically set confidence level based on confidence score."""
-        if 'confidence' not in values:
+        if 'confidence' not in info.data:
             return v
             
-        confidence = values['confidence']
+        confidence = info.data['confidence']
         if confidence >= 0.9:
             return ConfidenceLevel.VERY_HIGH
         elif confidence >= 0.7:
@@ -174,13 +176,14 @@ class AnalysisResult(BaseModel):
     llm_requests_made: int = 0
     static_analysis_errors: List[str] = Field(default_factory=list)
     
-    @validator('duration_seconds', always=True)
-    def calculate_duration(cls, v, values):
+    @field_validator('duration_seconds', mode='before')
+    @classmethod
+    def calculate_duration(cls, v, info):
         """Calculate duration if end_time is set."""
         if v is not None:
             return v
-        if 'end_time' in values and values['end_time'] and 'start_time' in values:
-            delta = values['end_time'] - values['start_time']
+        if 'end_time' in info.data and info.data['end_time'] and 'start_time' in info.data:
+            delta = info.data['end_time'] - info.data['start_time']
             return delta.total_seconds()
         return v
     

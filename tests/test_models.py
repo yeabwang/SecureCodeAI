@@ -58,7 +58,7 @@ class TestFinding:
         
         # Test medium confidence
         finding.confidence = 0.6
-        finding = Finding.parse_obj(finding.dict())  # Re-validate
+        finding = Finding.model_validate(finding.model_dump())  # Re-validate
         assert finding.confidence_level == ConfidenceLevel.MEDIUM
     
     def test_location_validation(self):
@@ -182,7 +182,7 @@ class TestAnalysisResult:
         result.end_time = end_time
         
         # Re-validate to trigger duration calculation
-        result = AnalysisResult.parse_obj(result.dict())
+        result = AnalysisResult.model_validate(result.model_dump())
         
         assert result.duration_seconds is not None
         assert result.duration_seconds > 0.05  # At least 50ms

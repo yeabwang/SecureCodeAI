@@ -4,7 +4,7 @@ import os
 import yaml
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
 
 from .models import SeverityLevel, VulnerabilityType, SourceTool, ScanMode, OutputFormat
@@ -59,7 +59,8 @@ class LLMConfig(BaseModel):
     enable_cross_validation: bool = True
     minimum_confidence_threshold: float = 0.3
     
-    @validator('api_key', always=True)
+    @field_validator('api_key', mode='before')
+    @classmethod
     def load_api_key(cls, v):
         """Load API key from environment if not provided."""
         if v is None:
@@ -227,11 +228,11 @@ class Config(BaseModel):
         config_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Convert to dict and clean up for YAML serialization
-        config_dict = self.dict()
-        self._prepare_for_yaml(config_dict)
+        config_dict = self.model_dump()
+        prepared_dict = self._prepare_for_yaml(config_dict)
         
         with open(config_path, 'w', encoding='utf-8') as f:
-            yaml.dump(config_dict, f, default_flow_style=False, indent=2)
+            yaml.dump(prepared_dict, f, default_flow_style=False, indent=2)
     
     def _prepare_for_yaml(self, data: Any) -> Any:
         """Prepare data for YAML serialization."""
@@ -274,7 +275,7 @@ class Config(BaseModel):
     def merge_with_cli_args(self, **cli_args) -> "Config":
         """Merge configuration with CLI arguments."""
         # Create a copy of current config
-        config_dict = self.dict()
+        config_dict = self.model_dump()
         
         # Map CLI arguments to config structure
         cli_mapping = {
