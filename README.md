@@ -45,6 +45,13 @@ python -m securecodeai.cli.main scan src/ --severity-threshold high
 python -m securecodeai.cli.main scan --help
 ```
 
+## Get Free Groq api key
+
+1. Sign up / Log in → Go to https://console.groq.com and create an account or log in.
+2. Access API Keys page → In the dashboard, click your profile icon → select API Keys.
+3. Create new key → Click Create API Key, name it, and confirm.
+4. Copy and store → Copy the key securely (it won’t be shown again).
+
 ### With LLM Enhancement
 
 ```bash
