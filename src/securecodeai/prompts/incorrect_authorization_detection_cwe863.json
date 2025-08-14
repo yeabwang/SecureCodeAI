@@ -1,0 +1,47 @@
+{
+  "title": "Incorrect Authorization Detection (CWE-863)",
+  "objective": "Identify exploitable authorization vulnerabilities by analyzing access control mechanisms that fail to properly verify user permissions for requested actions or resources, allowing attackers to perform unauthorized operations or access restricted functionality. Report only confirmed paths where authorization checks are missing, insufficient, or bypassable with high confidence in privilege escalation or unauthorized access.",
+  "method": {
+    "sources": ["User requests", "API calls", "Form submissions", "URL access", "Function calls", "Database operations", "File operations", "Administrative actions", "Resource access"],
+    "flow": "Trace user actions through authorization logic to identify missing, insufficient, or bypassable permission checks before sensitive operations",
+    "sinks": ["Administrative functions", "Data modification", "User management", "Financial operations", "System configuration", "File access", "Database writes", "Privilege changes"],
+    "validation": "Exclude if using proper role-based access control (RBAC), attribute-based access control (ABAC), or comprehensive permission verification"
+  },
+  "patterns": {
+    "missing_authorization": ["@PostMapping('/admin/users') without @PreAuthorize", "DELETE /api/users/{id} without permission check", "sensitive_function() without auth validation"],
+    "role_confusion": ["if (user.role == 'admin' || user.role == 'user')", "incorrect role hierarchy", "role escalation through parameter manipulation"],
+    "horizontal_privilege": ["user A modifying user B's data", "accessing other tenants' resources", "cross-user data manipulation"],
+    "vertical_privilege": ["regular user accessing admin functions", "privilege escalation through missing checks", "bypassing role restrictions"],
+    "client_side_authorization": ["disabled buttons for authorization", "hidden form fields for access control", "JavaScript-only permission checks"],
+    "parameter_manipulation": ["isAdmin=true in request", "role=administrator in form", "privilege level in URL parameter"],
+    "authorization_bypass": ["if (debug_mode) skip_auth_check()", "authentication != authorization confusion", "session-based bypass"],
+    "race_conditions": ["TOCTOU in permission checks", "concurrent modification during auth check", "state change after validation"],
+    "indirect_reference": ["file access through predictable IDs", "resource enumeration without ownership check", "forced browsing to restricted URLs"],
+    "business_logic_flaws": ["discount codes without usage limits", "price manipulation in checkout", "workflow step skipping"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Missing_Authorization|Role_Confusion|Horizontal_Privilege|Vertical_Privilege|Client_Side_Auth|Parameter_Manipulation",
+    "source": "user_request|api_call|form_submission|url_access|function_call",
+    "sink": "admin_function|data_modification|user_management|financial_operation|system_config",
+    "flow": "user_action→authorization_check→permission_verification→sensitive_operation",
+    "code": "@DeleteMapping('/api/users/{userId}') public void deleteUser(@PathVariable Long userId) { userService.delete(userId); } // Missing authorization check",
+    "payload": "DELETE /api/users/123 (deleting another user without permission check)",
+    "fix": "Add authorization: @PreAuthorize('hasRole(\"ADMIN\") or authentication.name == @userService.findById(#userId).username') before sensitive operations"
+  },
+  "rules": [
+    "Trace user actions to sensitive operations with exact line numbers and authorization flow analysis",
+    "Provide specific attack demonstrating unauthorized access or privilege escalation",
+    "Suggest proper authorization mechanisms (RBAC, ABAC, method-level security, resource-based permissions)",
+    "Verify operation sensitivity determines authorization risk (admin vs user functions, data vs metadata access)",
+    "Apply high confidence threshold; ignore if comprehensive authorization checks or access control frameworks detected",
+    "Consider both horizontal (same privilege level) and vertical (privilege escalation) authorization flaws",
+    "Flag administrative, financial, and user management functions as requiring strict authorization",
+    "Analyze multi-tenant applications for proper tenant isolation and cross-tenant access prevention",
+    "Check for authorization bypass through parameter manipulation, race conditions, or business logic flaws",
+    "Identify cases where incorrect authorization could lead to data breach, financial fraud, or system compromise",
+    "Consider complex authorization scenarios (resource ownership, dynamic permissions, contextual access)",
+    "Focus on web applications, APIs, and enterprise systems with role-based access requirements",
+    "Analyze authorization patterns in microservices, distributed systems, and cloud-native applications"
+  ]
+}

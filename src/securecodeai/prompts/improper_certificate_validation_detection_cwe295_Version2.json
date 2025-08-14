@@ -1,0 +1,46 @@
+{
+  "title": "Improper Certificate Validation Detection (CWE-295)",
+  "objective": "Identify exploitable certificate validation vulnerabilities by analyzing SSL/TLS implementations that fail to properly verify certificates, allowing attackers to perform man-in-the-middle attacks and intercept encrypted communications. Report only confirmed paths where certificate validation is bypassed or improperly implemented with high confidence in communication interception.",
+  "method": {
+    "sources": ["HTTPS requests", "SSL connections", "TLS handshakes", "Certificate chains", "Mobile HTTP clients", "Microservice communications", "API calls", "Database connections", "Email clients"],
+    "flow": "Trace SSL/TLS connection establishment through certificate validation logic to identify bypassed or insufficient verification checks",
+    "sinks": ["Certificate verification", "Hostname validation", "Trust store checks", "Certificate chain validation", "Revocation checking", "Certificate pinning", "Custom trust managers", "SSL context creation"],
+    "validation": "Exclude if using proper certificate validation, hostname verification, certificate pinning, or secure SSL context configuration"
+  },
+  "patterns": {
+    "trust_all_certs": ["TrustManager that accepts all certificates", "X509TrustManager with empty checkServerTrusted()", "SSL_VERIFY_NONE"],
+    "hostname_bypass": ["setHostnameVerifier(ALLOW_ALL_HOSTNAME_VERIFIER)", "verify() returns true always", "hostname validation disabled"],
+    "self_signed_acceptance": ["accept self-signed certificates", "ignore certificate errors", "custom trust store with test certs"],
+    "ssl_context_insecure": ["SSLContext.getInstance('SSL')", "no certificate validation in custom SSLSocketFactory", "insecure TLS configuration"],
+    "mobile_bypass": ["allowsArbitraryLoads = true", "NSAllowsArbitraryLoads in iOS", "network security config bypass"],
+    "curl_insecure": ["curl_setopt(CURLOPT_SSL_VERIFYPEER, false)", "-k or --insecure flag", "verify=False in requests"],
+    "java_trust_bypass": ["System.setProperty('com.sun.net.ssl.checkRevocation', 'false')", "HttpsURLConnection.setDefaultHostnameVerifier()"],
+    "dotnet_bypass": ["ServicePointManager.ServerCertificateValidationCallback = delegate { return true; }", "RemoteCertificateValidationCallback always true"],
+    "node_bypass": ["process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'", "rejectUnauthorized: false", "agent with custom ca"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Trust_All_Certs|Hostname_Bypass|Self_Signed_Accept|SSL_Context_Insecure|Mobile_Bypass|Curl_Insecure",
+    "source": "https_request|ssl_connection|mobile_http|microservice_call|api_client",
+    "sink": "cert_verify|hostname_validate|trust_check|ssl_context|cert_pinning",
+    "flow": "ssl_connection→certificate_validation→verification_bypass→insecure_communication",
+    "code": "HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() { public boolean verify(String hostname, SSLSession session) { return true; } });",
+    "payload": "Man-in-the-middle attack with self-signed certificate",
+    "fix": "Use proper validation: HttpsURLConnection.setDefaultHostnameVerifier(HttpsURLConnection.getDefaultHostnameVerifier()); and implement certificate pinning"
+  },
+  "rules": [
+    "Trace SSL/TLS connections through certificate validation with exact line numbers and validation logic",
+    "Provide specific attack scenario demonstrating man-in-the-middle exploitation",
+    "Suggest secure certificate validation (proper hostname verification, certificate pinning, CRL checking)",
+    "Verify application context determines validation risk (internal vs external, mobile vs server)",
+    "Apply high confidence threshold; ignore if proper certificate validation and pinning detected",
+    "Consider both client-side and server-side certificate validation vulnerabilities",
+    "Flag mobile applications and microservice communications as requiring strict validation",
+    "Analyze custom SSL implementations and trust managers for security weaknesses",
+    "Check for development/testing code that disables validation in production",
+    "Identify cases where certificate bypass could lead to credential theft or data interception",
+    "Consider different programming languages and their SSL/TLS implementation patterns",
+    "Focus on mobile apps, microservices, API clients, and systems handling sensitive data",
+    "Analyze configuration files and environment variables that might disable certificate validation"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "title": "SQL Injection Detection (CWE-89)",
+  "objective": "Identify exploitable SQL injection vulnerabilities by analyzing user input directly concatenated into SQL queries without parameterization that allows database manipulation, data exfiltration, or authentication bypass. Report only confirmed paths where user input can alter SQL query structure with high confidence in database compromise potential.",
+  "method": {
+    "sources": ["HTTP parameters (GET, POST)", "Form inputs", "Cookies", "Headers", "JSON/XML payloads", "File uploads", "API endpoints", "URL paths", "WebSocket data"],
+    "flow": "Trace user input from entry points through string concatenation or formatting into SQL query execution without proper parameterization",
+    "sinks": ["SQL execution functions (query, execute, exec)", "ORM raw queries", "Dynamic SQL construction", "Stored procedure calls with concatenation", "Database connection queries"],
+    "validation": "Exclude if using prepared statements, parameterized queries, ORM with safe methods, input validation with SQL escaping, or stored procedures with proper parameter binding"
+  },
+  "patterns": {
+    "classic": ["SELECT * FROM users WHERE id = '$_GET[id]'", "query = \"SELECT * FROM \" + table + \" WHERE name = '\" + input + \"'\""],
+    "authentication_bypass": ["WHERE username = '$user' AND password = '$pass'", "LOGIN query with user input concatenation"],
+    "union_based": ["SELECT col FROM table WHERE id = $id", "Dynamic column/table name insertion"],
+    "blind_injection": ["WHERE id = $input AND condition", "Time-based or boolean-based injection points"],
+    "second_order": ["INSERT username, then SELECT WHERE username = stored_value", "Stored input later used in unsafe query"],
+    "nosql_variants": ["db.collection.find({name: user_input})", "MongoDB injection patterns"],
+    "advanced": ["JSON field extraction with user input", "XML path queries", "Dynamic ORDER BY/LIMIT clauses", "Stored procedure parameter injection"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "source": "request.form['username']|$_GET['id']|req.body.search",
+    "sink": "mysqli_query()|execute()|db.collection.find()",
+    "flow": "user_input→string_concatenation→sql_execution",
+    "code": "$query = \"SELECT * FROM users WHERE id = \" . $_GET['id']; mysqli_query($conn, $query);",
+    "payload": "1' UNION SELECT password FROM admin_users--",
+    "fix": "Use prepared statements: $stmt = $conn->prepare(\"SELECT * FROM users WHERE id = ?\"); $stmt->bind_param('i', $_GET['id']);"
+  },
+  "rules": [
+    "Trace complete SQL construction from input to execution with line numbers",
+    "Provide injection type-specific payload (UNION, blind, time-based, boolean)",
+    "Suggest database-specific exploitation techniques (MySQL, PostgreSQL, MSSQL, Oracle)",
+    "Verify query context determines injection method (SELECT, INSERT, UPDATE, DELETE)",
+    "Apply high confidence threshold; ignore if parameterized queries or safe ORM methods detected",
+    "Consider both direct and indirect SQL injection through stored data",
+    "Flag dynamic SQL construction even with partial sanitization",
+    "Analyze second-order injection where input is stored then later used unsafely"
+  ]
+}

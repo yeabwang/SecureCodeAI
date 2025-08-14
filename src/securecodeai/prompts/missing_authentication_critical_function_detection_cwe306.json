@@ -1,0 +1,47 @@
+{
+  "title": "Missing Authentication for Critical Function Detection (CWE-306)",
+  "objective": "Identify exploitable missing authentication vulnerabilities by analyzing critical functions and endpoints that lack proper authentication checks, allowing attackers to access sensitive operations, administrative functions, or protected resources without providing valid credentials. Report only confirmed paths where critical functionality is accessible without authentication with high confidence in unauthorized access.",
+  "method": {
+    "sources": ["HTTP endpoints", "API routes", "Administrative functions", "Database operations", "File operations", "System commands", "Business logic", "Configuration changes", "User management"],
+    "flow": "Trace requests to critical functions through authentication middleware to identify endpoints that bypass or lack authentication requirements",
+    "sinks": ["Admin panels", "User management", "Financial operations", "Data modification", "System configuration", "File uploads", "Database access", "Privileged functions", "Critical business logic"],
+    "validation": "Exclude if using proper authentication middleware, session validation, API key verification, or comprehensive access control"
+  },
+  "patterns": {
+    "admin_no_auth": ["/admin/users without authentication", "administrative endpoints publicly accessible", "management interfaces without login"],
+    "api_no_auth": ["DELETE /api/users/{id} without API key", "PUT /api/config without authentication", "critical API endpoints unprotected"],
+    "file_operations": ["/upload endpoint without auth", "file deletion without user verification", "download sensitive files without login"],
+    "database_access": ["direct database endpoints", "/api/query without authentication", "database admin tools publicly accessible"],
+    "config_changes": ["/config/update without auth", "system settings modification", "environment variable changes without verification"],
+    "user_management": ["user creation without admin check", "password reset without verification", "account deletion publicly accessible"],
+    "financial_operations": ["payment processing without auth", "transaction modification", "billing changes without verification"],
+    "debug_endpoints": ["/debug/info publicly accessible", "development endpoints in production", "diagnostic tools without authentication"],
+    "backup_access": ["/backup/download without auth", "database dumps publicly accessible", "backup restoration without verification"],
+    "monitoring_endpoints": ["/health/detailed without auth", "metrics endpoints exposing sensitive data", "monitoring dashboards publicly accessible"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Admin_No_Auth|API_No_Auth|File_Operations|Database_Access|Config_Changes|User_Management|Financial_Operations",
+    "source": "http_endpoint|api_route|admin_function|db_operation|file_operation",
+    "sink": "admin_panel|user_mgmt|financial_op|data_modification|system_config",
+    "flow": "unauthenticated_request→critical_function→sensitive_operation→unauthorized_access",
+    "code": "@DeleteMapping('/api/users/{userId}') public ResponseEntity deleteUser(@PathVariable Long userId) { userService.deleteUser(userId); return ResponseEntity.ok().build(); } // No authentication required",
+    "payload": "DELETE /api/users/123 HTTP/1.1 (no authentication headers) → User 123 deleted",
+    "fix": "Add authentication: @PreAuthorize('hasRole(\"ADMIN\")') or use @Secured('ROLE_ADMIN') annotation before critical functions"
+  },
+  "rules": [
+    "Trace requests to critical functions with exact line numbers and authentication flow analysis",
+    "Provide specific HTTP request demonstrating unauthorized access to critical functionality",
+    "Suggest authentication mechanisms (session-based, token-based, API keys, OAuth, multi-factor)",
+    "Verify function criticality determines authentication requirement (admin vs user vs public functions)",
+    "Apply high confidence threshold; ignore if proper authentication middleware or access control detected",
+    "Consider both web endpoints and API routes that handle sensitive or privileged operations",
+    "Flag administrative, financial, and user management functions as requiring mandatory authentication",
+    "Analyze microservices and distributed systems for proper inter-service authentication",
+    "Check for authentication bypass through direct URL access, API calls, or function invocation",
+    "Identify cases where missing authentication could lead to data breach, system compromise, or business disruption",
+    "Consider different authentication contexts (web sessions, API tokens, service-to-service authentication)",
+    "Focus on enterprise applications, e-commerce platforms, and systems handling sensitive business operations",
+    "Analyze deployment configurations and routing rules that might expose unauthenticated endpoints"
+  ]
+}

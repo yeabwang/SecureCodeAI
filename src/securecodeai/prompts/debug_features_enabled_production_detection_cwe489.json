@@ -1,0 +1,47 @@
+{
+  "title": "Debug Features Enabled in Production Detection (CWE-489)",
+  "objective": "Identify exploitable debug features and development-time functionality enabled in production environments that expose sensitive system information, internal application details, or administrative capabilities to attackers. Report only confirmed cases where debug features are accessible in production with high confidence in information disclosure or privileged access.",
+  "method": {
+    "sources": ["Debug flags", "Environment variables", "Configuration files", "Compile-time flags", "Runtime parameters", "Framework settings", "Application properties", "Development modes", "Verbose logging"],
+    "flow": "Analyze application configurations, environment settings, and code paths to identify debug features, verbose error handling, or development utilities accessible in production deployments",
+    "sinks": ["Error pages", "Debug endpoints", "Stack traces", "Internal variables", "System information", "Database queries", "File paths", "Memory dumps", "Configuration details"],
+    "validation": "Exclude if debug features are properly disabled in production, environment-specific configurations separate development from production, or debug access is properly secured"
+  },
+  "patterns": {
+    "debug_flags": ["DEBUG = True in production", "app.debug = true", "NODE_ENV != 'production'", "RAILS_ENV = 'development'"],
+    "verbose_errors": ["display_errors = On", "detailed stack traces in production", "full exception details to users"],
+    "debug_endpoints": ["/debug/info accessible", "/actuator/env exposed", "/__debug__ routes enabled", "/admin/phpinfo.php"],
+    "development_tools": ["Django Debug Toolbar in production", "Spring Boot Actuator endpoints", "Laravel Telescope enabled"],
+    "logging_verbose": ["log level DEBUG in production", "sensitive data in logs", "SQL queries logged with parameters"],
+    "test_features": ["test modes enabled", "mock authentication in production", "test data accessible"],
+    "profiling_enabled": ["profiling tools active", "performance monitoring exposing internals", "memory profilers accessible"],
+    "source_maps": ["JavaScript source maps in production", ".map files accessible", "original source code exposure"],
+    "config_exposure": ["environment variables exposed", "configuration details in responses", "database credentials visible"],
+    "admin_interfaces": ["development admin panels", "database admin tools", "system monitoring interfaces"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Debug_Flags|Verbose_Errors|Debug_Endpoints|Development_Tools|Logging_Verbose|Test_Features|Config_Exposure",
+    "source": "debug_flag|env_variable|config_file|compile_flag|runtime_param",
+    "sink": "error_page|debug_endpoint|stack_trace|internal_variable|system_info",
+    "flow": "debug_configuration→production_deployment→information_exposure→sensitive_data_disclosure",
+    "code": "if os.environ.get('DEBUG', 'False').lower() == 'true': app.debug = True  # Debug enabled via environment variable",
+    "payload": "GET /error-page → Full stack trace with file paths, database connection strings, and internal variables",
+    "fix": "Environment-specific config: if os.environ.get('ENVIRONMENT') == 'production': app.debug = False; app.config['TESTING'] = False"
+  },
+  "rules": [
+    "Analyze configuration files and environment settings with exact line numbers and deployment context",
+    "Provide specific debug feature and information disclosure method accessible in production",
+    "Suggest production hardening measures (debug disabling, error handling, environment separation)",
+    "Verify deployment context determines debug risk (staging vs production vs development environments)",
+    "Apply high confidence threshold; ignore if debug features are properly disabled or secured in production",
+    "Consider both explicit debug flags and implicit development features left enabled",
+    "Flag web applications, APIs, and services with public exposure as critical for debug feature removal",
+    "Analyze framework-specific debug tools and their production deployment implications",
+    "Check for conditional debug enabling based on environment variables or configuration flags",
+    "Identify cases where debug features could enable reconnaissance, privilege escalation, or data access",
+    "Consider containerized deployments and their environment variable inheritance patterns",
+    "Focus on CI/CD pipelines, deployment scripts, and infrastructure-as-code for debug configuration management",
+    "Analyze third-party dependencies and frameworks for default debug settings that persist in production"
+  ]
+}

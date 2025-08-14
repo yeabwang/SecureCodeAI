@@ -1,0 +1,44 @@
+{
+  "title": "Out-of-bounds Read Detection (CWE-125)",
+  "objective": "Identify exploitable out-of-bounds read vulnerabilities by analyzing memory access patterns where untrusted input controls array indices, buffer offsets, or pointer arithmetic without proper bounds checking, allowing attackers to read sensitive memory contents. Report only confirmed paths where memory reads can exceed allocated boundaries with high confidence in information disclosure.",
+  "method": {
+    "sources": ["User input parameters", "Network packets", "File data", "Command line arguments", "Environment variables", "HTTP headers", "JSON/XML parsing", "Binary protocol fields"],
+    "flow": "Trace untrusted input used as array indices, buffer offsets, or memory addresses without validation against buffer boundaries",
+    "sinks": ["Array access operations", "Pointer dereferencing", "Memory copy functions", "String operations", "Buffer reads", "Vector/container access", "Memory mapping reads", "Structure field access"],
+    "validation": "Exclude if using bounds checking, safe container access, input validation, or memory-safe languages with bounds enforcement"
+  },
+  "patterns": {
+    "array_access": ["arr[user_index]", "buffer[offset]", "data[untrusted_size]"],
+    "pointer_arithmetic": ["ptr + user_offset", "base_addr + (index * sizeof(type))", "*(buffer + user_len)"],
+    "string_functions": ["strncpy(dest, src, user_len)", "memcpy(dst, src, untrusted_size)", "fread(buf, 1, user_count, fp)"],
+    "container_access": ["vector.at(user_index)", "list[untrusted_pos]", "map[user_key] without bounds"],
+    "loop_overrun": ["for(i=0; i<user_count; i++) read(buf[i])", "while(offset < user_limit) process(data[offset++])"],
+    "negative_index": ["array[user_input] where user_input can be negative", "buffer[size - user_offset] underflow"],
+    "integer_overflow": ["malloc(user_count * sizeof(int)) with large user_count", "array[user_a * user_b] multiplication overflow"],
+    "format_strings": ["printf(user_format, buffer)", "sprintf(out, user_fmt, data) with %n or %s"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Array_Access|Pointer_Arithmetic|String_Function|Container_Access|Loop_Overrun",
+    "source": "user_input|network_data|file_data|cmdline_arg|env_var",
+    "sink": "array_index|pointer_deref|memcpy|string_op|container_at",
+    "flow": "untrusted_input→index_calculation→memory_read",
+    "code": "char buffer[100]; int index = atoi(user_input); return buffer[index];",
+    "payload": "index=200 (reads 100 bytes past buffer end)",
+    "fix": "Add bounds check: if (index >= 0 && index < sizeof(buffer)) return buffer[index];"
+  },
+  "rules": [
+    "Trace untrusted input to memory access operations with exact line numbers and variable flow",
+    "Provide specific payload values that would trigger out-of-bounds reads",
+    "Suggest language-specific safe access patterns (std::vector::at(), bounds checking)",
+    "Verify memory access type determines information disclosure risk (stack vs heap vs globals)",
+    "Apply high confidence threshold; ignore if proper bounds validation or safe wrappers detected",
+    "Consider both positive overflow and negative underflow scenarios",
+    "Flag reads that could expose sensitive data (keys, passwords, internal structures) as critical",
+    "Analyze integer arithmetic that could cause index calculation overflow",
+    "Check for time-of-check-time-of-use (TOCTOU) races in bounds validation",
+    "Identify cases where out-of-bounds reads could be chained with other vulnerabilities",
+    "Consider compiler optimizations that might eliminate bounds checks",
+    "Focus on C/C++ code patterns while also checking unsafe operations in other languages"
+  ]
+}

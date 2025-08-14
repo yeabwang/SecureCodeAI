@@ -1,0 +1,39 @@
+{
+  "title": "Out-of-bounds Write (Buffer Overflow) Detection (CWE-787)",
+  "objective": "Identify exploitable buffer overflow vulnerabilities by analyzing memory writes beyond allocated buffer boundaries that can lead to code execution, privilege escalation, or system compromise. Report only confirmed paths where user input can cause memory corruption with high confidence in exploitability in C/C++ applications and embedded systems.",
+  "method": {
+    "sources": ["User input (command line args, network data)", "File content", "Environment variables", "Network packets", "IPC messages", "Configuration files", "Sensor data (IoT)"],
+    "flow": "Trace user-controlled data through buffer operations where write operations can exceed allocated memory boundaries",
+    "sinks": ["strcpy, strcat, sprintf, gets", "memcpy, memmove with user-controlled length", "Array indexing with unbounded indices", "Stack/heap buffer writes", "Buffer arithmetic operations"],
+    "validation": "Exclude if using safe functions (strncpy, snprintf, strlcpy), bounds checking, memory-safe languages, or compiler protections (stack canaries, ASLR) with proper validation"
+  },
+  "patterns": {
+    "classic": ["strcpy(buf, user_input)", "sprintf(buffer, \"%s\", argv[1])", "gets(buffer)"],
+    "memcpy_overflow": ["memcpy(dest, src, user_len)", "strncpy without null termination"],
+    "array_bounds": ["buffer[user_index] = value", "for(i=0; i<user_count; i++) buf[i] = data[i]"],
+    "arithmetic": ["ptr = buffer + user_offset; *ptr = value", "buffer[size - user_input] = data"],
+    "format_string": ["printf(user_format)", "sprintf(buf, user_controlled_format)"],
+    "heap_overflow": ["malloc(size); memcpy(ptr, data, user_len)", "realloc operations with user size"],
+    "advanced": ["Off-by-one errors (buf[size] = 0)", "Integer overflow in size calculations", "Stack buffer in recursive functions", "VLA with user size"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Stack_Overflow|Heap_Overflow|Array_Bounds|Format_String",
+    "source": "argv[1]|fread()|recv()",
+    "sink": "strcpy()|memcpy()|buffer[index]",
+    "flow": "user_input→size_calculation→buffer_write",
+    "code": "char buf[100]; strcpy(buf, argv[1]);",
+    "payload": "A * 120 (overflow by 20 bytes)",
+    "fix": "Use strncpy with size limit: strncpy(buf, argv[1], sizeof(buf)-1); buf[sizeof(buf)-1] = '\\0';"
+  },
+  "rules": [
+    "Trace buffer allocation size vs write operation length with line numbers",
+    "Calculate exact overflow bytes and potential return address overwrite",
+    "Provide architecture-specific exploitation notes (x86/x64 stack layout)",
+    "Suggest modern mitigation bypasses if applicable (ROP chains, heap spray)",
+    "Apply high confidence threshold; ignore if stack protectors or safe wrappers detected",
+    "Consider both local and remote exploitation scenarios",
+    "Flag dangerous functions even with partial user control over length/content",
+    "Analyze integer overflow leading to buffer size miscalculation"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "title": "NoSQL Injection Detection (CWE-943)",
+  "objective": "Identify exploitable NoSQL injection vulnerabilities by analyzing database queries that incorporate unsanitized user input into NoSQL operations, allowing attackers to manipulate query logic, extract unauthorized data, or bypass authentication controls. Report only confirmed paths where malicious input can alter NoSQL query behavior with high confidence in data manipulation or unauthorized access.",
+  "method": {
+    "sources": ["HTTP parameters", "Form fields", "JSON payloads", "URL parameters", "Request headers", "Cookie values", "File uploads", "API endpoints", "GraphQL variables"],
+    "flow": "Trace user-controlled input through NoSQL query construction to identify injection points where operators, field names, or values can be manipulated",
+    "sinks": ["MongoDB queries", "CouchDB operations", "Redis commands", "Elasticsearch queries", "DynamoDB operations", "Cassandra CQL", "Neo4j Cypher", "DocumentDB queries"],
+    "validation": "Exclude if using parameterized queries, input validation, query builders with proper escaping, or strict schema enforcement"
+  },
+  "patterns": {
+    "mongodb_injection": ["db.users.find({username: req.body.username})", "{'$where': 'user_input'}", "eval() in MongoDB queries"],
+    "operator_injection": ["{'$ne': null}", "{'$regex': 'malicious_regex'}", "{'$gt': ''}", "{'$exists': false}"],
+    "javascript_injection": ["$where with user input", "mapReduce with user-controlled code", "eval() in query context"],
+    "json_manipulation": ["JSON.parse(user_input) in query", "Object spread with user data", "dynamic field construction"],
+    "authentication_bypass": ["{'password': {'$ne': 1}}", "login bypass with $nin operator", "{'$or': [true_condition]}"],
+    "blind_injection": ["time-based attacks with $where", "error-based injection", "boolean-based blind injection"],
+    "aggregation_injection": ["$match with user input", "$lookup manipulation", "pipeline injection"],
+    "field_injection": ["dynamic field names from user", "projection injection", "sort parameter manipulation"],
+    "redis_injection": ["EVAL with user script", "Lua script injection", "command injection in Redis"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "MongoDB_Injection|Operator_Injection|JavaScript_Injection|JSON_Manipulation|Auth_Bypass|Aggregation_Injection",
+    "source": "http_param|form_field|json_payload|url_param|request_header",
+    "sink": "mongodb_query|couchdb_op|redis_command|elasticsearch_query|dynamodb_op",
+    "flow": "user_input→nosql_query_construction→query_execution→data_manipulation",
+    "code": "const user = await db.collection('users').findOne({username: req.body.username, password: req.body.password});",
+    "payload": "username[$ne]=admin&password[$ne]=null (authentication bypass)",
+    "fix": "Use parameterized queries: findOne({username: {$eq: req.body.username}, password: {$eq: req.body.password}}) with input validation"
+  },
+  "rules": [
+    "Trace user input to NoSQL query construction with exact line numbers and query building logic",
+    "Provide specific NoSQL injection payload that exploits the identified vulnerability",
+    "Suggest secure query practices (parameterized queries, input validation, query builders)",
+    "Verify NoSQL database type determines injection techniques (MongoDB vs Redis vs Elasticsearch)",
+    "Apply high confidence threshold; ignore if proper query parameterization or input validation detected",
+    "Consider both direct query injection and JSON/object manipulation attacks",
+    "Flag authentication and authorization queries as requiring strict input validation",
+    "Analyze aggregation pipelines and complex queries for injection vulnerabilities",
+    "Check for JavaScript execution contexts in NoSQL databases (MongoDB $where, Redis Lua)",
+    "Identify cases where NoSQL injection could lead to authentication bypass or data exfiltration",
+    "Consider different NoSQL database families and their specific injection attack vectors",
+    "Focus on web applications, APIs, and microservices using NoSQL databases",
+    "Analyze GraphQL resolvers and ORM/ODM implementations for NoSQL injection vulnerabilities"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "title": "Improper Authentication Detection (CWE-287)",
+  "objective": "Identify exploitable improper authentication vulnerabilities by analyzing authentication mechanisms that fail to properly verify user identity, allowing attackers to bypass authentication controls or impersonate legitimate users. Report only confirmed paths where authentication can be circumvented with high confidence in unauthorized access or identity spoofing.",
+  "method": {
+    "sources": ["Login forms", "API authentication", "Session tokens", "Password fields", "Biometric data", "Multi-factor codes", "Certificate validation", "OAuth flows", "SAML assertions"],
+    "flow": "Trace authentication implementation from credential input through validation logic to access decision, identifying weaknesses in verification process",
+    "sinks": ["User verification functions", "Password comparison", "Token validation", "Session creation", "Access grants", "Role assignment", "Authentication bypass", "Identity assertion"],
+    "validation": "Exclude if using secure password hashing, proper token validation, timing-safe comparisons, or comprehensive multi-factor authentication"
+  },
+  "patterns": {
+    "weak_password_check": ["if (password == stored_password)", "md5(password) == stored_hash", "sha1(user_input) comparison"],
+    "timing_attacks": ["for char in password: if char != expected: return False", "string comparison without constant time"],
+    "empty_password": ["if (!password.isEmpty()) authenticate()", "empty string bypasses authentication"],
+    "hardcoded_credentials": ["if (username == 'admin' && password == 'admin123')", "backdoor credentials in code"],
+    "token_bypass": ["if (token) { authenticate(); } // missing validation", "token existence check without verification"],
+    "authentication_bypass": ["if (debug_mode) skip_auth()", "admin=true parameter bypass", "authentication logic flaws"],
+    "weak_session": ["session_id = user_id", "predictable session tokens", "session fixation vulnerabilities"],
+    "oauth_flaws": ["missing state parameter", "redirect_uri manipulation", "authorization code reuse"],
+    "certificate_bypass": ["SSL verification disabled", "certificate validation skipped", "self-signed cert acceptance"],
+    "brute_force_enabled": ["unlimited login attempts", "no rate limiting", "no account lockout"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Weak_Password|Timing_Attack|Empty_Password|Hardcoded_Creds|Token_Bypass|Auth_Bypass",
+    "source": "login_form|api_auth|session_token|password_field|oauth_flow",
+    "sink": "user_verify|password_compare|token_validate|session_create|access_grant",
+    "flow": "credential_input→authentication_logic→access_decision",
+    "code": "if (request.getParameter('password').equals(user.getPassword())) { login(user); }",
+    "payload": "username=admin&password= (empty password bypass)",
+    "fix": "Use secure comparison: BCrypt.checkpw(password, user.getHashedPassword()) with proper hashing and timing-safe comparison"
+  },
+  "rules": [
+    "Trace authentication flow from credential input through verification logic with exact line numbers",
+    "Provide specific attack vector that exploits the authentication weakness",
+    "Suggest secure authentication practices (bcrypt/scrypt, timing-safe comparison, MFA)",
+    "Verify authentication context determines impact (admin vs user, internal vs external)",
+    "Apply high confidence threshold; ignore if proper password hashing and validation detected",
+    "Consider both primary authentication and secondary factors (2FA, biometrics)",
+    "Flag administrative and privileged account authentication as requiring strongest security",
+    "Analyze session management and token-based authentication for proper validation",
+    "Check for authentication bypass through parameter manipulation or logic flaws",
+    "Identify cases where weak authentication could lead to account takeover or privilege escalation",
+    "Consider different authentication methods (password, token, certificate, biometric)",
+    "Focus on login endpoints, API authentication, and session validation mechanisms",
+    "Analyze OAuth, SAML, and other federated authentication implementations for security flaws"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "title": "Improper Link Resolution Detection (CWE-59)",
+  "objective": "Identify exploitable improper link resolution vulnerabilities by analyzing file operations that follow symbolic or hard links without proper validation, allowing attackers to access files outside intended directories through link traversal attacks. Report only confirmed paths where malicious links can redirect file operations to unauthorized locations with high confidence in file system access bypass.",
+  "method": {
+    "sources": ["File paths", "User uploads", "Archive extractions", "File operations", "Directory traversals", "Symbolic links", "Hard links", "Mount points", "Network shares"],
+    "flow": "Trace file path operations through link resolution mechanisms to identify cases where symbolic or hard links can redirect access to unintended file system locations",
+    "sinks": ["File reads", "File writes", "File deletions", "Directory operations", "Archive extractions", "File copies", "Permission changes", "Ownership changes", "File metadata access"],
+    "validation": "Exclude if using canonical path resolution, link following restrictions, chroot jails, or proper path validation with link detection"
+  },
+  "patterns": {
+    "symlink_traversal": ["ln -s /etc/passwd public/user_file.txt", "symbolic link pointing outside web root", "symlink to sensitive system files"],
+    "archive_extraction": ["tar -xf user_archive.tar", "zip extraction without path validation", "symlink bombs in archives"],
+    "file_operations": ["open(user_provided_path)", "copyfile(src, dest) with symlinks", "file operations following links"],
+    "directory_traversal": ["../../../etc/passwd via symlink", "directory traversal through link redirection", "chained symlink attacks"],
+    "hardlink_attacks": ["hard link to restricted file", "link() system call abuse", "hardlink to files in other directories"],
+    "race_conditions": ["TOCTOU with symlink creation", "symlink race in temporary directories", "concurrent link manipulation"],
+    "zip_slip": ["zip entries with symlinks", "tar slip through symbolic links", "archive extraction symlink abuse"],
+    "web_directory": ["symlink in web directory to /etc", "document root symlink attacks", "web-accessible symlinks"],
+    "temp_directory": ["/tmp symlink attacks", "predictable temp file with symlinks", "symlink in shared temp space"],
+    "config_files": ["symlink to sensitive config", "configuration directory symlinks", "link to system configuration"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Symlink_Traversal|Archive_Extraction|File_Operations|Directory_Traversal|Hardlink_Attack|Race_Condition|Zip_Slip",
+    "source": "file_path|user_upload|archive_extract|file_operation|directory_traversal",
+    "sink": "file_read|file_write|file_delete|directory_op|archive_extract",
+    "flow": "file_path→link_resolution→file_operation→unauthorized_file_access",
+    "code": "def read_user_file(filename): with open(os.path.join('/var/www/uploads/', filename), 'r') as f: return f.read()  # No symlink validation",
+    "payload": "ln -s /etc/passwd /var/www/uploads/user_data.txt → read_user_file('user_data.txt') reads /etc/passwd",
+    "fix": "Validate paths: realpath = os.path.realpath(filepath); if not realpath.startswith('/var/www/uploads/'): raise SecurityError('Path traversal detected')"
+  },
+  "rules": [
+    "Trace file paths through resolution mechanisms with exact line numbers and link following behavior",
+    "Provide specific symlink creation command and file operation that would exploit the vulnerability",
+    "Suggest path validation measures (canonical path resolution, realpath checks, chroot containment)",
+    "Verify file operation context determines link risk (web uploads vs system files vs user directories)",
+    "Apply high confidence threshold; ignore if proper path canonicalization or link restrictions detected",
+    "Consider both direct file operations and indirect access through archives or batch operations",
+    "Flag web applications, file upload systems, and archive processors as high-risk for link attacks",
+    "Analyze Unix/Linux file operations for proper symbolic and hard link handling",
+    "Check for race conditions between path validation and file operation execution",
+    "Identify cases where link resolution could lead to sensitive file disclosure or system compromise",
+    "Consider containerized environments and their link resolution behavior across mount points",
+    "Focus on file management systems, backup utilities, and applications processing user-provided archives",
+    "Analyze temporary file handling, web document roots, and shared directory operations for link vulnerabilities"
+  ]
+}

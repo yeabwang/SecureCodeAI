@@ -1,0 +1,47 @@
+{
+  "title": "Improper Neutralization of Special Elements Detection (CWE-74)",
+  "objective": "Identify exploitable improper neutralization vulnerabilities by analyzing code that fails to properly sanitize, escape, or validate special characters and metacharacters before passing data to interpreters, allowing attackers to inject malicious commands, queries, or code that alter intended program execution. Report only confirmed paths where special elements can be manipulated with high confidence in injection attacks.",
+  "method": {
+    "sources": ["User inputs", "Form data", "URL parameters", "HTTP headers", "File contents", "Database records", "API payloads", "Configuration data", "External feeds"],
+    "flow": "Trace untrusted data containing special characters through processing pipelines to interpreters that execute or parse the data without proper neutralization",
+    "sinks": ["Command interpreters", "SQL engines", "Template engines", "Script interpreters", "Markup parsers", "Expression evaluators", "Query processors", "Configuration parsers", "Serialization handlers"],
+    "validation": "Exclude if using proper input validation, output encoding, parameterized queries, or context-aware escaping mechanisms"
+  },
+  "patterns": {
+    "command_injection": ["system('ping ' + user_input)", "exec('ls ' + filename)", "shell metacharacters: ; | & $ ` ( )"],
+    "sql_injection": ["'SELECT * FROM users WHERE name=' + username", "SQL metacharacters: ' \" ; -- /*", "UNION SELECT injection"],
+    "script_injection": ["eval('var x = ' + user_data)", "JavaScript injection with quotes and semicolons", "Python exec() with user input"],
+    "template_injection": ["{{user_input}} in templates", "template metacharacters: {{ }} {% %}", "server-side template injection"],
+    "ldap_injection": ["(&(cn=' + username + '))", "LDAP metacharacters: ( ) & | ! =", "LDAP filter manipulation"],
+    "xpath_injection": ["//user[name='" + input + "']", "XPath metacharacters: ' \" [ ] / @", "XPath query manipulation"],
+    "xml_injection": ["<user>' + name + '</user>", "XML metacharacters: < > & \" '", "XML structure manipulation"],
+    "regex_injection": ["Pattern.compile(user_regex)", "regex metacharacters: . * + ? ^ $ ( ) [ ] { } |", "ReDoS and pattern bypass"],
+    "expression_injection": ["evaluate(user_expression)", "expression language injection", "SpEL, OGNL, MVEL injection"],
+    "format_string": ["printf(user_format)", "format specifiers: %s %d %x %n", "format string attacks"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Command_Injection|SQL_Injection|Script_Injection|Template_Injection|LDAP_Injection|XPath_Injection|XML_Injection|Regex_Injection",
+    "source": "user_input|form_data|url_param|http_header|file_content",
+    "sink": "command_interpreter|sql_engine|template_engine|script_interpreter|markup_parser",
+    "flow": "untrusted_data→special_characters→interpreter→injection_execution",
+    "code": "String command = 'ping -c 1 ' + request.getParameter('host'); Runtime.getRuntime().exec(command); // Command injection via shell metacharacters",
+    "payload": "host=google.com; cat /etc/passwd → executes: ping -c 1 google.com; cat /etc/passwd",
+    "fix": "Use parameterization: ProcessBuilder pb = new ProcessBuilder('ping', '-c', '1', host); pb.start(); // No shell interpretation"
+  },
+  "rules": [
+    "Trace untrusted data to interpreters with exact line numbers and special character analysis",
+    "Provide specific payload with metacharacters demonstrating injection attack success",
+    "Suggest context-appropriate neutralization (parameterized queries, input validation, output encoding)",
+    "Verify interpreter type determines neutralization method (SQL vs command vs template vs script)",
+    "Apply high confidence threshold; ignore if proper escaping, validation, or parameterization detected",
+    "Consider both direct injection and second-order injection through stored data",
+    "Flag applications with user input processing, data transformation, or dynamic query generation",
+    "Analyze different programming languages and their specific metacharacter handling requirements",
+    "Check for encoding bypasses, nested injection contexts, and polyglot injection attacks",
+    "Identify cases where special element injection could lead to code execution, data breach, or system compromise",
+    "Consider web applications, API endpoints, configuration parsers, and data processing pipelines",
+    "Focus on input validation libraries, sanitization functions, and security middleware implementations",
+    "Analyze legacy code, third-party integrations, and dynamically generated queries for injection vulnerabilities"
+  ]
+}

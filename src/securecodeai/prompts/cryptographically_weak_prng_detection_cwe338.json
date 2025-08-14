@@ -1,0 +1,47 @@
+{
+  "title": "Use of Cryptographically Weak PRNGs Detection (CWE-338)",
+  "objective": "Identify exploitable cryptographically weak pseudo-random number generator vulnerabilities by analyzing code that uses non-cryptographic or predictable random number generators for security-critical operations, allowing attackers to predict or reproduce random values used in authentication, session management, or cryptographic operations. Report only confirmed cases where weak PRNGs compromise security-sensitive randomness with high confidence in predictability attacks.",
+  "method": {
+    "sources": ["Random number generators", "PRNG implementations", "Entropy sources", "Seed values", "Random functions", "System randomness", "Library random calls", "Custom random implementations", "Time-based seeds"],
+    "flow": "Analyze random number generation calls and PRNG implementations to identify usage of non-cryptographic or weakly seeded generators in security-sensitive contexts",
+    "sinks": ["Session tokens", "Authentication tokens", "Cryptographic keys", "Nonces", "CSRF tokens", "Password reset tokens", "API keys", "Challenge values", "Salt generation"],
+    "validation": "Exclude if using cryptographically secure PRNGs (SecureRandom, /dev/urandom, CryptGenRandom, crypto.getRandomValues) with proper entropy sources"
+  },
+  "patterns": {
+    "weak_system_random": ["Math.random() for security", "rand() for tokens", "random.randint() for crypto", "System.Random for security"],
+    "predictable_seeds": ["time-based seeds", "process ID seeds", "sequential seeds", "user-provided seeds", "deterministic initialization"],
+    "linear_congruential": ["LCG implementations", "custom PRNG with known algorithms", "Mersenne Twister for security", "LFSR for cryptography"],
+    "insufficient_entropy": ["low entropy sources", "/dev/random blocking", "entropy pool depletion", "virtual machine entropy issues"],
+    "prng_state_exposure": ["PRNG state leakage", "predictable internal state", "state reconstruction attacks", "output correlation"],
+    "weak_libraries": ["insecure random libraries", "deprecated random functions", "non-crypto random APIs", "gaming random functions"],
+    "custom_implementations": ["homebrew PRNG", "custom random algorithms", "weak mixing functions", "insufficient state space"],
+    "replay_attacks": ["reused random values", "predictable sequence", "insufficient randomness refresh", "deterministic patterns"],
+    "timing_attacks": ["timing-based randomness", "clock-based seeds", "performance counter seeds", "network timing randomness"],
+    "vm_weaknesses": ["virtualized entropy", "snapshot/restore issues", "cloned VM states", "container randomness sharing"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Weak_System_Random|Predictable_Seeds|Linear_Congruential|Insufficient_Entropy|PRNG_State_Exposure|Custom_Implementations",
+    "source": "random_generator|prng_implementation|entropy_source|seed_value|random_function",
+    "sink": "session_token|auth_token|crypto_key|nonce|csrf_token",
+    "flow": "weak_prng→security_token_generation→predictable_randomness→token_prediction_attack",
+    "code": "String sessionId = String.valueOf(Math.random() * 1000000); // Weak PRNG for session ID",
+    "payload": "Predict session IDs: Math.random() uses LCG → Next session ID = (previous * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1)",
+    "fix": "Use secure random: SecureRandom secureRandom = new SecureRandom(); byte[] randomBytes = new byte[16]; secureRandom.nextBytes(randomBytes);"
+  },
+  "rules": [
+    "Analyze random number generation with exact line numbers and PRNG algorithm identification",
+    "Provide specific prediction method or attack scenario against the weak PRNG implementation",
+    "Suggest cryptographically secure PRNGs appropriate for the platform and security requirements",
+    "Verify security context determines PRNG requirements (session management vs gaming vs simulation)",
+    "Apply high confidence threshold; ignore if cryptographically secure PRNGs are used for security functions",
+    "Consider both direct weak PRNG usage and indirect usage through libraries or frameworks",
+    "Flag authentication systems, session management, and cryptographic key generation as critical",
+    "Analyze different programming languages and their secure random number generation APIs",
+    "Check for proper entropy source initialization and seeding of cryptographic PRNGs",
+    "Identify cases where weak randomness could enable session hijacking, token forgery, or key prediction",
+    "Consider distributed systems and their shared randomness or synchronized PRNG state issues",
+    "Focus on web applications, mobile apps, and embedded systems with limited entropy sources",
+    "Analyze third-party libraries, legacy code, and ported implementations for weak PRNG usage"
+  ]
+}

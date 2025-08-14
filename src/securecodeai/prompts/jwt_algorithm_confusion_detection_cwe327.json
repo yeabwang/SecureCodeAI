@@ -1,0 +1,47 @@
+{
+  "title": "JWT Algorithm Confusion Detection (CWE-327)",
+  "objective": "Identify exploitable JWT algorithm confusion vulnerabilities by analyzing JSON Web Token implementations that fail to properly validate or restrict signing algorithms, allowing attackers to forge tokens by exploiting algorithm downgrade attacks, symmetric/asymmetric algorithm confusion, or 'none' algorithm abuse. Report only confirmed cases where JWT verification can be bypassed with high confidence in authentication bypass.",
+  "method": {
+    "sources": ["JWT tokens", "Authorization headers", "Authentication middleware", "Token validation", "JWT libraries", "API endpoints", "Session management", "OAuth implementations", "Token generation"],
+    "flow": "Analyze JWT creation, validation, and processing logic to identify cases where algorithm verification is missing, inconsistent, or can be manipulated by attackers",
+    "sinks": ["Token verification", "Authentication checks", "Authorization decisions", "Session validation", "API access control", "User identity", "Permission grants", "Security contexts", "Resource access"],
+    "validation": "Exclude if JWT implementations properly validate algorithms, use algorithm allowlists, and prevent algorithm manipulation attacks"
+  },
+  "patterns": {
+    "none_algorithm": ["alg: 'none' acceptance", "unsigned token validation", "algorithm bypass via none", "missing signature verification"],
+    "rsa_hmac_confusion": ["RSA public key as HMAC secret", "asymmetric to symmetric downgrade", "HS256 with RSA key", "algorithm substitution attack"],
+    "algorithm_not_verified": ["jwt.decode() without algorithm check", "missing 'algorithms' parameter", "dynamic algorithm acceptance", "algorithm from token header"],
+    "weak_algorithms": ["HS256 with weak secrets", "deprecated signing algorithms", "insufficient key strength", "predictable secret keys"],
+    "algorithm_downgrade": ["RS256 to HS256 downgrade", "ES256 to HS256 conversion", "forced algorithm change", "weaker algorithm acceptance"],
+    "key_confusion": ["wrong key type for algorithm", "symmetric key for asymmetric algorithm", "public key for HMAC", "key type mismatch"],
+    "header_manipulation": ["algorithm from untrusted header", "dynamic algorithm selection", "user-controlled algorithm", "header tampering"],
+    "library_misuse": ["improper JWT library usage", "missing algorithm validation", "default insecure settings", "configuration errors"],
+    "signature_bypass": ["signature verification disabled", "conditional signature checking", "fallback to unsigned", "verification bypass logic"],
+    "kid_confusion": ["key ID manipulation", "key confusion via kid header", "key selection bypass", "public key injection"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "None_Algorithm|RSA_HMAC_Confusion|Algorithm_Not_Verified|Weak_Algorithms|Algorithm_Downgrade|Key_Confusion|Header_Manipulation",
+    "source": "jwt_token|auth_header|auth_middleware|token_validation|jwt_library",
+    "sink": "token_verification|auth_check|authz_decision|session_validation|api_access_control",
+    "flow": "jwt_processing→algorithm_validation→signature_verification→authentication_bypass",
+    "code": "DecodedJWT jwt = JWT.decode(token); // Missing algorithm verification - accepts any algorithm including 'none'",
+    "payload": "JWT with alg:'none' and removed signature → {'alg':'none','typ':'JWT'}.{'sub':'admin','exp':9999999999}.'' → Admin access",
+    "fix": "Verify algorithm: JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret)).build(); DecodedJWT jwt = verifier.verify(token);"
+  },
+  "rules": [
+    "Analyze JWT processing logic with exact line numbers and algorithm validation assessment",
+    "Provide specific JWT forgery payload demonstrating algorithm confusion attack success",
+    "Suggest secure JWT implementation (algorithm allowlists, proper verification, key management)",
+    "Verify JWT usage context determines security requirements (authentication vs authorization vs session management)",
+    "Apply high confidence threshold; ignore if proper algorithm validation and restriction mechanisms detected",
+    "Consider both JWT generation and validation sides of algorithm confusion vulnerabilities",
+    "Flag authentication systems, API gateways, and microservice authorization as critical for JWT security",
+    "Analyze different JWT libraries and their default security configurations across programming languages",
+    "Check for JWT middleware configuration and its algorithm validation enforcement",
+    "Identify cases where JWT algorithm confusion could enable privilege escalation or unauthorized access",
+    "Consider distributed systems and their JWT validation consistency across multiple services",
+    "Focus on OAuth 2.0 implementations, API authentication, and single sign-on systems using JWTs",
+    "Analyze custom JWT implementations and third-party authentication providers for algorithm validation gaps"
+  ]
+}

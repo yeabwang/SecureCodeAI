@@ -1,0 +1,47 @@
+{
+  "title": "Server-Side Template Injection (SSTI) Detection (CWE-94)",
+  "objective": "Identify exploitable server-side template injection vulnerabilities by analyzing code that processes user input through template engines without proper sanitization, allowing attackers to inject malicious template syntax that executes arbitrary code on the server, accesses sensitive data, or compromises the application. Report only confirmed paths where user input reaches template processing with high confidence in code execution potential.",
+  "method": {
+    "sources": ["User inputs", "Form data", "URL parameters", "HTTP headers", "Request body", "File contents", "Database records", "API payloads", "Query parameters"],
+    "flow": "Trace untrusted user input through template processing pipelines to identify where user-controlled data is evaluated as template syntax without proper escaping or sandboxing",
+    "sinks": ["Template engines", "Template rendering", "Expression evaluation", "Template compilation", "Dynamic content generation", "Template processors", "View rendering", "Email templates", "Report generation"],
+    "validation": "Exclude if using proper input sanitization, template sandboxing, auto-escaping, or if user input is properly isolated from template syntax"
+  },
+  "patterns": {
+    "jinja2_injection": ["{{ user_input }}", "{% if user_input %}", "render_template_string(user_data)", "Jinja2 expression injection"],
+    "thymeleaf_injection": ["th:text='${user_input}'", "th:utext without escaping", "SpEL expression injection", "[[${user_input}]]"],
+    "freemarker_injection": ["${user_input}", "<#assign var=user_input>", "FreeMarker directive injection", "?eval builtin usage"],
+    "velocity_injection": ["$user_input", "#set($var = $user_input)", "Velocity Template Language injection", "#evaluate directive"],
+    "mustache_injection": ["{{user_input}}", "{{{user_input}}}", "Handlebars helper injection", "lambda injection"],
+    "smarty_injection": ["{$user_input}", "{literal}{/literal} bypass", "Smarty modifier injection", "{php} tag injection"],
+    "twig_injection": ["{{ user_input }}", "{% if user_input %}", "Twig filter injection", "attribute() function abuse"],
+    "erb_injection": ["<%= user_input %>", "<% user_input %>", "Ruby ERB code injection", "eval() in templates"],
+    "jade_pug_injection": ["#{user_input}", "!{user_input}", "Pug template injection", "unescaped interpolation"],
+    "razor_injection": ["@user_input", "@Html.Raw(user_input)", "C# Razor injection", "dynamic compilation"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Jinja2_Injection|Thymeleaf_Injection|Freemarker_Injection|Velocity_Injection|Mustache_Injection|Smarty_Injection|Twig_Injection",
+    "source": "user_input|form_data|url_param|http_header|request_body",
+    "sink": "template_engine|template_rendering|expression_eval|template_compilation|dynamic_content",
+    "flow": "user_input→template_processing→template_syntax_evaluation→server_side_code_execution",
+    "code": "String template = 'Hello ' + request.getParameter('name') + '!'; return templateEngine.process(template, context); // User input in template",
+    "payload": "name={{7*7}} → Template renders 'Hello 49!' indicating SSTI → name={{''.__class__.__mro__[1].__subclasses__()[104].__init__.__globals__['sys'].exit()}}",
+    "fix": "Sanitize input: String safeName = StringEscapeUtils.escapeHtml4(request.getParameter('name')); // Or use parameterized templates"
+  },
+  "rules": [
+    "Trace user input to template engines with exact line numbers and template syntax analysis",
+    "Provide specific SSTI payload demonstrating template evaluation and potential code execution path",
+    "Suggest template-specific mitigation (auto-escaping, sandboxing, input validation, parameterized templates)",
+    "Verify template engine type determines injection method (expression languages vs template directives)",
+    "Apply high confidence threshold; ignore if proper template escaping, sandboxing, or input validation detected",
+    "Consider both direct template injection and stored template injection through persistent data",
+    "Flag web applications, email systems, and report generators using template engines as critical",
+    "Analyze different template engines and their specific syntax for user input evaluation",
+    "Check for template engine configuration that might disable security features (auto-escaping, sandboxing)",
+    "Identify cases where SSTI could lead to remote code execution, file system access, or data exfiltration",
+    "Consider modern frameworks and their template engine integrations (Spring, Django, Flask, Express)",
+    "Focus on user-facing applications, content management systems, and dynamic document generation",
+    "Analyze custom template implementations and their security controls against malicious template syntax"
+  ]
+}

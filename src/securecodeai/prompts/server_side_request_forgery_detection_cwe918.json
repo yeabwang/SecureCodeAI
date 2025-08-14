@@ -1,0 +1,46 @@
+{
+  "title": "Server-Side Request Forgery (SSRF) Detection (CWE-918)",
+  "objective": "Identify exploitable SSRF vulnerabilities by analyzing server-side HTTP requests that incorporate user-controlled URLs or parameters, allowing attackers to make requests to internal systems, cloud metadata services, or arbitrary external hosts. Report only confirmed paths where malicious URLs can trigger unauthorized requests with high confidence in internal system access or data exfiltration.",
+  "method": {
+    "sources": ["URL parameters", "Form fields", "JSON payloads", "File uploads", "Webhook URLs", "API endpoints", "Image sources", "Redirect parameters", "Proxy configurations"],
+    "flow": "Trace user-controlled URLs through server-side HTTP client libraries to identify requests that can target internal networks or sensitive endpoints",
+    "sinks": ["HTTP client requests", "URL fetching", "Image processing", "Webhook delivery", "File downloads", "XML parsing", "RSS feed fetching", "Proxy requests"],
+    "validation": "Exclude if using URL whitelisting, internal network blocking, or proper input validation with safe HTTP client configuration"
+  },
+  "patterns": {
+    "url_parameters": ["GET /fetch?url=http://internal.server", "POST /webhook?callback_url=", "GET /proxy?target="],
+    "image_processing": ["<img src='user_input'>", "fetch_image(user_url)", "process_avatar(url_from_user)"],
+    "webhook_delivery": ["webhook_url = request.json['url']", "send_notification(user_callback)", "register_webhook(external_url)"],
+    "file_downloads": ["download_file(user_provided_url)", "import_from_url(external_source)", "fetch_remote_content()"],
+    "xml_parsing": ["XMLHttpRequest to user URL", "SOAP endpoint from user input", "XML external entity with user URL"],
+    "cloud_metadata": ["http://169.254.169.254/latest/meta-data/", "http://metadata.google.internal/", "Azure IMDS endpoints"],
+    "internal_networks": ["http://localhost:8080/admin", "http://192.168.1.1/config", "http://10.0.0.1/internal"],
+    "protocol_abuse": ["file:///etc/passwd", "gopher://internal:70/", "dict://localhost:11211/"],
+    "dns_rebinding": ["malicious.com resolving to 127.0.0.1", "DNS rebinding attacks", "time-of-check-time-of-use"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "URL_Parameter|Image_Processing|Webhook_Delivery|File_Download|XML_Parsing|Cloud_Metadata",
+    "source": "url_param|form_field|json_payload|webhook_url|file_upload",
+    "sink": "http_request|url_fetch|image_process|webhook_send|file_download",
+    "flow": "user_controlled_url→server_side_request→internal_system_access",
+    "code": "String imageUrl = request.getParameter('imageUrl'); BufferedImage img = ImageIO.read(new URL(imageUrl));",
+    "payload": "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+    "fix": "Validate URLs: if (!isAllowedDomain(url) || isInternalIP(url)) throw SecurityException(); Use URL whitelist"
+  },
+  "rules": [
+    "Trace user-controlled URLs to server-side HTTP requests with exact line numbers and request construction",
+    "Provide specific SSRF payload targeting cloud metadata services or internal networks",
+    "Suggest URL validation measures (domain whitelisting, internal IP blocking, protocol restrictions)",
+    "Verify deployment context determines SSRF risk (cloud vs on-premise, microservices vs monolith)",
+    "Apply high confidence threshold; ignore if proper URL validation or network restrictions detected",
+    "Consider both direct URL input and indirect URL construction from user parameters",
+    "Flag applications in cloud environments with access to metadata services as critical",
+    "Analyze webhook systems, image processing, and file import functionality for SSRF vectors",
+    "Check for blind SSRF where responses aren't returned but requests are still made",
+    "Identify cases where SSRF could lead to cloud credential theft, internal service enumeration, or data exfiltration",
+    "Consider different protocols beyond HTTP (file, gopher, dict, ftp) that might be supported",
+    "Focus on microservice architectures, cloud applications, and systems with external integrations",
+    "Analyze DNS rebinding possibilities and time-of-check-time-of-use vulnerabilities in URL validation"
+  ]
+}

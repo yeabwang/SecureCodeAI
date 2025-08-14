@@ -1,0 +1,37 @@
+{
+  "title": "Cross-Site Scripting (XSS) Detection (CWE-79)",
+  "objective": "Identify exploitable Cross-Site Scripting vulnerabilities by analyzing unescaped user input rendered in web pages that allows script execution in victim's browser. Report only confirmed XSS paths where user input reaches DOM/HTML output without proper sanitization, emphasizing high confidence in client-side code execution potential.",
+  "method": {
+    "sources": ["HTTP parameters (GET, POST)", "URL fragments", "Form inputs", "Cookies", "Headers (Referer, User-Agent)", "WebSocket messages", "JSON/XML data", "File uploads (filename, content)"],
+    "flow": "Trace user input from entry points through processing logic to HTML/DOM output without proper encoding or sanitization",
+    "sinks": ["HTML output (echo, print, innerHTML)", "JavaScript contexts (script tags, event handlers)", "CSS contexts (style attributes)", "URL contexts (href, src attributes)", "DOM manipulation (document.write, appendChild)"],
+    "validation": "Exclude if using secure encoding (htmlspecialchars, encodeURIComponent), CSP headers, template engines with auto-escaping, or input validation that strips/encodes dangerous characters"
+  },
+  "patterns": {
+    "reflected": ["echo $_GET['search']", "document.write(location.hash)", "innerHTML = request.params.query"],
+    "stored": ["SELECT comment FROM db; echo $comment", "localStorage.getItem() without encoding"],
+    "dom_based": ["location.hash directly to innerHTML", "postMessage data to DOM", "document.URL to script context"],
+    "context_specific": ["href='javascript:' + user_input", "style='color:' + $_POST['color']", "onclick='func(\"' + input + '\")'"],
+    "template_injection": ["{{user_input}} in templates without escaping", "Handlebars {{{unsafe}}} syntax"],
+    "advanced": ["JSON injection in script tags", "CSS expression() with user data", "SVG onload events", "Data URIs with JavaScript"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Reflected|Stored|DOM-Based|Template",
+    "source": "request.query.search|document.location.hash",
+    "sink": "echo|innerHTML|document.write|template_render",
+    "flow": "user_input→processing_function→html_output",
+    "code": "echo '<div>' . $_GET['name'] . '</div>';",
+    "payload": "<script>alert('XSS')</script>",
+    "fix": "Use htmlspecialchars(): echo '<div>' . htmlspecialchars($_GET['name'], ENT_QUOTES) . '</div>';"
+  },
+  "rules": [
+    "Trace complete data flow from input to output with line numbers",
+    "Provide context-specific XSS payload (HTML, JavaScript, CSS, URL context)",
+    "Suggest framework-specific escaping (e.g., Twig |e, React JSX auto-escaping)",
+    "Verify output context determines encoding method (HTML entities vs URL encoding)",
+    "Apply high confidence threshold; ignore if auto-escaping templates or strict CSP detected",
+    "Consider both client-side and server-side rendering paths",
+    "Flag dangerous JavaScript functions (eval, innerHTML, document.write) with user data"
+  ]
+}

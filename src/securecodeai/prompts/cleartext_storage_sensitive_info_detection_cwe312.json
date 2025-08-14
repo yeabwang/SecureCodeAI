@@ -1,0 +1,47 @@
+{
+  "title": "Cleartext Storage of Sensitive Information Detection (CWE-312)",
+  "objective": "Identify exploitable cleartext storage vulnerabilities by analyzing code that stores sensitive information in unencrypted form in files, databases, memory, or configuration systems, allowing attackers with file system, database, or memory access to directly retrieve confidential data. Report only confirmed paths where sensitive data is stored without encryption with high confidence in data exposure.",
+  "method": {
+    "sources": ["User passwords", "API keys", "Database credentials", "Encryption keys", "Personal data", "Financial information", "Authentication tokens", "Session data", "Business secrets"],
+    "flow": "Trace sensitive data from input or generation through storage mechanisms to identify locations where confidential information is persisted in cleartext format",
+    "sinks": ["File writes", "Database inserts", "Configuration files", "Memory storage", "Cache systems", "Log files", "Backup files", "Temporary files", "Environment variables"],
+    "validation": "Exclude if using encryption, hashing (for passwords), secure key management, or data protection mechanisms"
+  },
+  "patterns": {
+    "password_cleartext": ["INSERT INTO users (password) VALUES (?)", "user.password = plaintext_password", "config.admin_password = 'secret123'"],
+    "api_key_storage": ["api_key = 'sk-1234567890abcdef'", "config.properties: aws.secret.key=", "hardcoded API keys in source"],
+    "database_credentials": ["connection_string = 'mysql://user:password@host'", "db_password = 'admin123'", "cleartext DB credentials"],
+    "config_file_secrets": [".env files with secrets", "application.properties with passwords", "config.json with API keys"],
+    "session_storage": ["session['credit_card'] = card_number", "localStorage.setItem('password')", "unencrypted session data"],
+    "file_storage": ["write_to_file('secrets.txt', api_key)", "save_credentials(username, password)", "cleartext file persistence"],
+    "memory_storage": ["global_password = user_input", "static final String API_KEY = 'secret'", "in-memory cleartext storage"],
+    "cache_storage": ["redis.set('user:password', plaintext)", "memcached with sensitive data", "unencrypted cache entries"],
+    "backup_exposure": ["database dumps with cleartext passwords", "configuration backups", "source code in version control"],
+    "log_storage": ["logger.info('Password: ' + password)", "access logs with sensitive params", "cleartext logging of secrets"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Password_Cleartext|API_Key_Storage|Database_Credentials|Config_File_Secrets|Session_Storage|File_Storage|Cache_Storage",
+    "source": "user_password|api_key|db_credential|encryption_key|personal_data",
+    "sink": "file_write|db_insert|config_file|memory_store|cache_system",
+    "flow": "sensitive_data→storage_operation→cleartext_persistence→data_exposure",
+    "code": "Properties config = new Properties(); config.setProperty('database.password', 'admin123'); config.store(new FileOutputStream('config.properties'), null);",
+    "payload": "File system access to config.properties reveals database password",
+    "fix": "Encrypt sensitive data: String encryptedPassword = encrypt(password); config.setProperty('database.password', encryptedPassword);"
+  },
+  "rules": [
+    "Trace sensitive data to storage operations with exact line numbers and persistence mechanisms",
+    "Provide specific method to access stored cleartext data (file path, database table, cache key)",
+    "Suggest data protection measures (encryption at rest, key management, secure configuration)",
+    "Verify data sensitivity determines storage risk (passwords vs API keys vs PII vs financial data)",
+    "Apply high confidence threshold; ignore if proper encryption, hashing, or secure storage detected",
+    "Consider both intentional storage and accidental persistence (logs, backups, temporary files)",
+    "Flag applications handling authentication, financial, or regulated data as requiring encryption",
+    "Analyze configuration management, deployment scripts, and environment setup for cleartext secrets",
+    "Check for sensitive data in version control, configuration files, and backup systems",
+    "Identify cases where cleartext storage could lead to credential theft, identity theft, or compliance violations",
+    "Consider different storage contexts (development vs production, local vs cloud, persistent vs temporary)",
+    "Focus on legacy systems, configuration management, and applications migrated from older architectures",
+    "Analyze third-party integrations, CI/CD pipelines, and infrastructure-as-code for embedded secrets"
+  ]
+}

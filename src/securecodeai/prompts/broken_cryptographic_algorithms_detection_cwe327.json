@@ -1,0 +1,47 @@
+{
+  "title": "Use of Broken Cryptographic Algorithms Detection (CWE-327)",
+  "objective": "Identify exploitable broken cryptographic algorithm vulnerabilities by analyzing code that uses deprecated, weak, or compromised cryptographic functions for security-critical operations, allowing attackers to break encryption, forge signatures, or compromise data integrity through cryptanalytic attacks. Report only confirmed cases where broken algorithms protect sensitive data with high confidence in cryptographic compromise.",
+  "method": {
+    "sources": ["Cryptographic libraries", "Hash functions", "Encryption algorithms", "Digital signatures", "Key derivation", "Message authentication", "Random number generation", "Certificate validation", "Protocol implementations"],
+    "flow": "Analyze cryptographic function calls and algorithm selections to identify usage of deprecated or cryptographically broken algorithms in security-sensitive contexts",
+    "sinks": ["Password hashing", "Data encryption", "Digital signatures", "Session tokens", "API authentication", "Certificate generation", "Message integrity", "Key exchange", "Secure communications"],
+    "validation": "Exclude if using modern secure algorithms (AES, RSA-2048+, ECDSA, SHA-256+, bcrypt, Argon2) or if broken algorithms are used in non-security contexts"
+  },
+  "patterns": {
+    "weak_hashing": ["MD5 for passwords", "SHA1 for signatures", "CRC32 for integrity", "MD4 usage", "SHA0 implementation"],
+    "broken_encryption": ["DES encryption", "3DES for new systems", "RC4 stream cipher", "Blowfish with small keys", "ECB mode usage"],
+    "weak_signatures": ["RSA-1024 or smaller", "DSA with SHA1", "ECDSA with weak curves", "signature without padding"],
+    "insecure_random": ["Math.random() for security", "predictable PRNG", "insufficient entropy", "weak seed generation"],
+    "deprecated_protocols": ["SSL 2.0/3.0", "TLS 1.0/1.1", "weak cipher suites", "export-grade ciphers"],
+    "weak_key_derivation": ["PBKDF2 with low iterations", "simple key stretching", "no salt usage", "weak KDF parameters"],
+    "broken_mac": ["HMAC-MD5", "CBC-MAC without authentication", "weak message authentication", "length extension attacks"],
+    "weak_padding": ["PKCS#1 v1.5 padding", "no padding validation", "padding oracle vulnerabilities", "weak OAEP parameters"],
+    "insecure_curves": ["secp256k1 misuse", "weak elliptic curves", "invalid curve parameters", "point validation bypass"],
+    "algorithm_downgrade": ["cipher suite downgrade", "protocol version rollback", "algorithm negotiation attacks", "weak fallback options"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Weak_Hashing|Broken_Encryption|Weak_Signatures|Insecure_Random|Deprecated_Protocols|Weak_Key_Derivation|Broken_MAC",
+    "source": "crypto_library|hash_function|encryption_algo|digital_signature|key_derivation",
+    "sink": "password_hashing|data_encryption|digital_signature|session_token|api_auth",
+    "flow": "broken_algorithm→security_operation→cryptographic_weakness→data_compromise",
+    "code": "MessageDigest md5 = MessageDigest.getInstance('MD5'); byte[] hash = md5.digest(password.getBytes()); // MD5 for password hashing",
+    "payload": "Rainbow table attack against MD5 hash → Password recovery in minutes",
+    "fix": "Use secure algorithms: BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12); String hash = encoder.encode(password); // bcrypt with work factor 12"
+  },
+  "rules": [
+    "Analyze cryptographic function calls with exact line numbers and algorithm identification",
+    "Provide specific attack method against the broken algorithm (collision, preimage, brute force)",
+    "Suggest modern secure alternatives (AES-256, RSA-3072+, SHA-256+, Argon2, bcrypt)",
+    "Verify security context determines cryptographic requirements (authentication vs confidentiality vs integrity)",
+    "Apply high confidence threshold; ignore if broken algorithms are used for non-security purposes or legacy compatibility",
+    "Consider both direct algorithm usage and indirect usage through libraries or frameworks",
+    "Flag applications handling authentication, encryption, digital signatures, or sensitive data as critical",
+    "Analyze different programming languages and their cryptographic library implementations",
+    "Check for algorithm agility and upgrade paths in cryptographic implementations",
+    "Identify cases where broken cryptography could enable data breach, authentication bypass, or integrity compromise",
+    "Consider compliance requirements (FIPS 140-2, Common Criteria, industry standards)",
+    "Focus on financial systems, healthcare applications, and government systems with strict cryptographic requirements",
+    "Analyze third-party libraries, legacy code, and vendor-supplied cryptographic components for weak algorithms"
+  ]
+}

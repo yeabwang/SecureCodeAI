@@ -1,0 +1,47 @@
+{
+  "title": "Insufficient Key Length Detection (CWE-326)",
+  "objective": "Identify exploitable insufficient key length vulnerabilities by analyzing cryptographic implementations that use keys shorter than current security standards, allowing attackers to break encryption or forge signatures through brute force, mathematical attacks, or specialized hardware. Report only confirmed cases where inadequate key lengths compromise security-critical operations with high confidence in cryptographic weakness.",
+  "method": {
+    "sources": ["Key generation", "Cryptographic parameters", "Algorithm configurations", "Certificate creation", "Encryption setup", "Signature schemes", "Key exchange protocols", "Random key generation", "Symmetric key derivation"],
+    "flow": "Analyze cryptographic key generation and usage to identify instances where key lengths fall below current security recommendations for the algorithm and use case",
+    "sinks": ["Encryption operations", "Digital signatures", "Key exchange", "Certificate generation", "Authentication tokens", "Session keys", "Master keys", "API keys", "Cryptographic protocols"],
+    "validation": "Exclude if key lengths meet or exceed current security standards (AES-256, RSA-3072+, ECDSA-256+, DH-3072+) or if short keys are used for non-security purposes"
+  },
+  "patterns": {
+    "weak_symmetric": ["AES-128 in high-security contexts", "DES 56-bit keys", "3DES effective 112-bit", "RC4 variable weak keys"],
+    "weak_asymmetric": ["RSA-1024 or smaller", "RSA-2048 for long-term use", "DSA-1024", "ElGamal weak parameters"],
+    "weak_elliptic": ["ECDSA P-192", "secp256k1 misuse", "weak elliptic curve parameters", "insufficient curve security"],
+    "weak_dh": ["Diffie-Hellman 1024-bit", "weak DH group parameters", "insufficient prime length", "small subgroup attacks"],
+    "weak_hash_length": ["truncated hash outputs", "HMAC with short keys", "insufficient MAC key length", "hash output truncation"],
+    "custom_crypto": ["homebrew key generation", "insufficient entropy collection", "weak key derivation parameters", "custom PRNG with short seed"],
+    "legacy_standards": ["FIPS 140-2 Level 1 minimums", "outdated NIST recommendations", "pre-2023 key length standards", "compliance minimums"],
+    "protocol_weakness": ["TLS cipher suites with weak keys", "SSH key exchange weakness", "IPSec weak parameters", "VPN weak encryption"],
+    "certificate_weakness": ["SSL certificates with RSA-1024", "code signing with weak keys", "CA certificates insufficient length", "certificate chain weakness"],
+    "key_derivation": ["PBKDF2 with insufficient iterations", "scrypt with weak parameters", "Argon2 insufficient memory", "weak salt generation"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Weak_Symmetric|Weak_Asymmetric|Weak_Elliptic|Weak_DH|Weak_Hash_Length|Custom_Crypto|Legacy_Standards",
+    "source": "key_generation|crypto_params|algo_config|cert_creation|encryption_setup",
+    "sink": "encryption_op|digital_signature|key_exchange|cert_generation|auth_token",
+    "flow": "insufficient_key_length→cryptographic_operation→security_weakness→attack_feasibility",
+    "code": "KeyGenerator keyGen = KeyGenerator.getInstance('AES'); keyGen.init(128); SecretKey key = keyGen.generateKey(); // AES-128 for long-term storage",
+    "payload": "Quantum computer attack against AES-128 → Key recovery in 2^64 operations (feasible by 2030)",
+    "fix": "Use adequate key length: keyGen.init(256); // AES-256 provides post-quantum security margin"
+  },
+  "rules": [
+    "Analyze key generation and cryptographic parameters with exact line numbers and security assessment",
+    "Provide specific attack scenario considering current and future computational capabilities",
+    "Suggest appropriate key lengths based on 2025+ security standards and quantum computing threats",
+    "Verify cryptographic context determines key length requirements (short-term vs long-term protection)",
+    "Apply high confidence threshold; ignore if key lengths meet current best practices for the use case",
+    "Consider both current cryptanalytic capabilities and projected future attacks (quantum computing)",
+    "Flag long-term data protection, financial systems, and critical infrastructure as requiring maximum key lengths",
+    "Analyze compliance requirements and their evolution toward post-quantum cryptography",
+    "Check for algorithm-specific key length recommendations and security margins",
+    "Identify cases where insufficient key length could enable practical attacks within data lifetime",
+    "Consider hybrid cryptographic systems and their weakest-link key length dependencies",
+    "Focus on new implementations that should use current best practices rather than legacy minimums",
+    "Analyze cryptographic libraries and their default key generation parameters for adequacy"
+  ]
+}

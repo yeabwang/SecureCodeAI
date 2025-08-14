@@ -1,0 +1,47 @@
+{
+  "title": "Improper Output Handling Detection (LLM05 - OWASP)",
+  "objective": "Identify exploitable improper output handling vulnerabilities in LLM implementations where model outputs are processed without proper validation or sanitization before being passed to downstream systems, allowing attackers to inject malicious content that executes in shells, databases, or web browsers. Report only confirmed paths where LLM outputs can trigger code execution or injection attacks with high confidence in system compromise.",
+  "method": {
+    "sources": ["LLM model outputs", "Generated text", "Code suggestions", "Command completions", "SQL generations", "Template outputs", "Translation results", "Summarization outputs", "Chat responses"],
+    "flow": "Trace LLM outputs through processing pipelines to downstream systems that execute or interpret the generated content without proper validation",
+    "sinks": ["Shell execution", "Database queries", "Web rendering", "Template engines", "API calls", "File operations", "Email sending", "System commands", "Code compilation"],
+    "validation": "Exclude if using output sanitization, content filtering, sandboxed execution, or proper input validation on LLM outputs"
+  },
+  "patterns": {
+    "shell_injection": ["exec(llm_output)", "subprocess.run(model_response, shell=True)", "system(generated_command)"],
+    "sql_injection": ["cursor.execute(llm_sql_query)", "db.query(generated_sql)", "SELECT * FROM table WHERE " + model_output"],
+    "code_execution": ["eval(llm_code)", "Function(generated_javascript)()", "compile(model_python_code)"],
+    "xss_injection": ["innerHTML = llm_response", "document.write(generated_html)", "template rendering without escaping"],
+    "template_injection": ["Jinja2 template with {{llm_output}}", "Handlebars {{model_response}}", "server-side template injection"],
+    "file_operations": ["open(llm_filename, 'w')", "fs.writeFile(generated_path)", "file operations with model paths"],
+    "api_calls": ["requests.get(llm_url)", "fetch(generated_endpoint)", "HTTP requests to model-generated URLs"],
+    "email_injection": ["send_email(to=llm_recipient)", "SMTP with model-generated headers", "email content injection"],
+    "ldap_injection": ["ldap.search(generated_filter)", "LDAP queries with model output", "directory service injection"],
+    "xml_injection": ["ET.fromstring(llm_xml)", "XML parsing of generated content", "XXE through model output"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Shell_Injection|SQL_Injection|Code_Execution|XSS_Injection|Template_Injection|File_Operations|API_Calls",
+    "source": "llm_output|generated_text|code_suggestion|command_completion|sql_generation",
+    "sink": "shell_exec|db_query|web_render|template_engine|api_call",
+    "flow": "llm_generation→output_processing→downstream_system→code_execution",
+    "code": "command = llm.generate('Create a bash command to list files in directory: ' + user_input)\nos.system(command)  # Direct execution of LLM output",
+    "payload": "User input: '/etc; cat /etc/passwd #' → LLM generates: 'ls /etc; cat /etc/passwd #'",
+    "fix": "Validate and sanitize: validated_command = validate_command(command); subprocess.run(shlex.split(validated_command), check=True)"
+  },
+  "rules": [
+    "Trace LLM outputs to execution contexts with exact line numbers and processing flow",
+    "Provide specific prompt and expected malicious output that would exploit the vulnerability",
+    "Suggest output validation measures (content filtering, sandboxing, input sanitization, allowlists)",
+    "Verify downstream system determines execution risk (shell vs database vs web browser vs file system)",
+    "Apply high confidence threshold; ignore if proper output validation or sandboxed execution detected",
+    "Consider both direct output execution and indirect processing through templates or APIs",
+    "Flag LLM applications with system access, database connectivity, or web rendering as critical",
+    "Analyze code generation tools, SQL query builders, and command line assistants for injection risks",
+    "Check for output encoding, escaping, and validation before passing to downstream systems",
+    "Identify cases where output injection could lead to system compromise, data breach, or privilege escalation",
+    "Consider different LLM integration patterns (direct execution, template processing, API forwarding)",
+    "Focus on AI-powered development tools, automated systems, and LLM-integrated enterprise applications",
+    "Analyze prompt engineering and output formatting that might influence injection attack success"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "title": "Use After Free Detection (CWE-416)",
+  "objective": "Identify exploitable use-after-free vulnerabilities by analyzing memory lifecycle patterns where freed memory is subsequently accessed, allowing attackers to potentially execute arbitrary code through heap manipulation. Report only confirmed paths where freed memory is dereferenced with high confidence in memory corruption exploitation.",
+  "method": {
+    "sources": ["User-controlled object lifetime", "Network connection handling", "File descriptor management", "Dynamic allocation triggers", "Callback function pointers", "Event handler registration", "Thread synchronization", "Exception handling paths"],
+    "flow": "Trace memory allocation, deallocation (free/delete), and subsequent access patterns to identify use-after-free conditions",
+    "sinks": ["Pointer dereference", "Function calls through freed objects", "Member access", "Array indexing", "Virtual function calls", "Callback invocation", "Memory copy operations", "String operations on freed buffers"],
+    "validation": "Exclude if using smart pointers, garbage collection, null pointer checks after free, or memory-safe languages"
+  },
+  "patterns": {
+    "classic_uaf": ["free(ptr); *ptr = value;", "delete obj; obj->method();", "free(buffer); strcpy(buffer, data);"],
+    "double_free": ["free(ptr); free(ptr);", "delete obj; delete obj;", "fclose(fp); fclose(fp);"],
+    "callback_uaf": ["register_callback(obj->handler); delete obj; trigger_callback();", "event_handler = freed_object->callback;"],
+    "container_uaf": ["vector.erase(it); *it;", "list.remove(node); node->data;", "map.erase(key); iterator->second;"],
+    "thread_race": ["thread1: delete shared_obj; thread2: shared_obj->method();", "async free with concurrent access"],
+    "exception_uaf": ["try { delete obj; throw; } catch { obj->cleanup(); }", "RAII failure with manual cleanup"],
+    "virtual_call": ["delete derived; base_ptr->virtual_method();", "vtable corruption after free"],
+    "heap_spray": ["free(chunk); allocation pattern; use freed chunk for controlled data"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Classic_UAF|Double_Free|Callback_UAF|Container_UAF|Thread_Race|Virtual_Call",
+    "source": "user_object|network_conn|file_handle|dynamic_alloc|callback_ptr",
+    "sink": "pointer_deref|method_call|member_access|array_index|virtual_call",
+    "flow": "allocation→free/delete→subsequent_access",
+    "code": "Object* obj = new Object(); delete obj; return obj->getValue();",
+    "payload": "Heap spray with controlled data to exploit freed memory",
+    "fix": "Set pointer to NULL after delete: delete obj; obj = nullptr; or use smart pointers"
+  },
+  "rules": [
+    "Trace object lifecycle from allocation through deallocation to subsequent use with exact line numbers",
+    "Provide specific access pattern that demonstrates use-after-free condition",
+    "Suggest memory-safe alternatives (smart pointers, RAII, garbage collection)",
+    "Verify memory access type determines exploitability (heap vs stack, virtual calls vs data access)",
+    "Apply high confidence threshold; ignore if proper null checks or smart pointers detected",
+    "Consider both single-threaded and multi-threaded use-after-free scenarios",
+    "Flag virtual function calls and function pointers on freed objects as critical",
+    "Analyze container operations that may invalidate iterators or references",
+    "Check for exception safety issues that could lead to premature object destruction",
+    "Identify cases where use-after-free could be exploited for code execution",
+    "Consider timing windows in asynchronous operations and callback mechanisms",
+    "Focus on C/C++ patterns while checking for similar issues in manual memory management contexts",
+    "Analyze destruction order in complex object hierarchies and dependency chains"
+  ]
+}

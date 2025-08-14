@@ -1,0 +1,46 @@
+{
+  "title": "Deserialization Vulnerabilities Detection (CWE-502)",
+  "objective": "Identify exploitable deserialization vulnerabilities by analyzing unsafe deserialization of untrusted data that can lead to remote code execution through object instantiation and method invocation. Report only confirmed paths where malicious serialized objects can trigger arbitrary code execution with high confidence in system compromise.",
+  "method": {
+    "sources": ["HTTP request bodies", "Cookies", "URL parameters", "File uploads", "Network protocols", "Database stored objects", "Cache entries", "Message queues", "API payloads"],
+    "flow": "Trace untrusted serialized data through deserialization functions that can instantiate arbitrary objects and execute code during object reconstruction",
+    "sinks": ["Object deserialization", "JSON parsing", "XML unmarshalling", "Binary deserialization", "Pickle loading", "YAML parsing", "Protocol buffer parsing", "Custom serialization"],
+    "validation": "Exclude if using safe deserialization libraries, type restrictions, object whitelisting, or sandboxed execution environments"
+  },
+  "patterns": {
+    "java_deserialization": ["ObjectInputStream.readObject()", "XMLDecoder.readObject()", "XStream.fromXML(untrusted_xml)"],
+    "dotnet_deserialization": ["BinaryFormatter.Deserialize()", "JavaScriptSerializer.Deserialize()", "XmlSerializer.Deserialize()"],
+    "python_pickle": ["pickle.load(user_data)", "pickle.loads(request.data)", "cPickle.load(untrusted_stream)"],
+    "php_deserialization": ["unserialize($_POST['data'])", "unserialize($_COOKIE['session'])", "file_get_contents + unserialize"],
+    "yaml_deserialization": ["yaml.load(user_input)", "YAML.load(untrusted_yaml)", "PyYAML without safe_load"],
+    "json_deserialization": ["JSON.parse() with __proto__ pollution", "jackson databind with default typing", "gson with custom deserializers"],
+    "xml_deserialization": ["XMLDecoder on user XML", "XStream without security framework", "JAXB unmarshalling"],
+    "native_serialization": ["readObject() with gadget chains", "custom readResolve() methods", "serialization proxy bypass"],
+    "protocol_buffers": ["protobuf parsing without validation", "custom message types", "reflection-based deserialization"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Java_Object|DotNet_Binary|Python_Pickle|PHP_Unserialize|YAML_Load|JSON_Parse|XML_Decode",
+    "source": "http_body|cookie|url_param|file_upload|network_data",
+    "sink": "object_deserial|json_parse|xml_unmarshal|pickle_load|yaml_load",
+    "flow": "untrusted_data→deserialization_function→object_instantiation→code_execution",
+    "code": "ObjectInputStream ois = new ObjectInputStream(request.getInputStream()); MyObject obj = (MyObject) ois.readObject();",
+    "payload": "ysoserial CommonsCollections1 'calc.exe' | base64",
+    "fix": "Use safe alternatives: JSON with schema validation, or implement object type whitelisting with ObjectInputFilter"
+  },
+  "rules": [
+    "Trace untrusted data to deserialization functions with exact line numbers and data flow paths",
+    "Provide specific payload type that would exploit the deserialization vulnerability",
+    "Suggest secure alternatives (JSON with validation, protobuf, safe YAML parsing)",
+    "Verify deserialization context determines exploitability (web app vs internal service)",
+    "Apply high confidence threshold; ignore if safe deserialization methods or type restrictions detected",
+    "Consider both direct deserialization and framework-level deserialization (Spring, Struts)",
+    "Flag deserialization in web-facing applications and privileged contexts as critical",
+    "Analyze gadget chain availability in classpath for Java deserialization exploits",
+    "Check for custom serialization methods that might introduce vulnerabilities",
+    "Identify cases where deserialization could lead to RCE, DoS, or privilege escalation",
+    "Consider different serialization formats and their specific attack vectors",
+    "Focus on enterprise applications using Java, .NET, Python, and PHP frameworks",
+    "Analyze message processing systems, caching layers, and session management for unsafe deserialization"
+  ]
+}

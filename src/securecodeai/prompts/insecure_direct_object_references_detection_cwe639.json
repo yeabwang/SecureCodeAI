@@ -1,0 +1,46 @@
+{
+  "title": "Insecure Direct Object References (IDOR) Detection (CWE-639)",
+  "objective": "Identify exploitable IDOR vulnerabilities by analyzing direct object access patterns where user-controlled parameters reference internal objects without proper authorization checks, allowing attackers to access unauthorized data or functionality belonging to other users. Report only confirmed paths where object references can be manipulated to bypass access controls with high confidence in unauthorized access.",
+  "method": {
+    "sources": ["URL parameters", "Form fields", "API endpoints", "Hidden form fields", "Cookie values", "JSON payloads", "Query strings", "Path parameters", "Request headers"],
+    "flow": "Trace user-controlled identifiers used to directly access objects (files, records, accounts) without verifying user ownership or permissions",
+    "sinks": ["Database queries", "File operations", "Object retrievals", "Account access", "Document viewing", "Profile modifications", "Financial transactions", "Administrative functions"],
+    "validation": "Exclude if using proper ownership validation, access control checks, or indirect object references with mapping tables"
+  },
+  "patterns": {
+    "url_parameters": ["GET /users/profile?id=123", "GET /documents/view?doc_id=456", "GET /orders/details/789"],
+    "path_parameters": ["GET /api/users/{user_id}/profile", "DELETE /accounts/{account_id}", "PUT /files/{file_id}/content"],
+    "form_fields": ["<input type='hidden' name='user_id' value='123'>", "account_number field manipulation", "order_id in form submission"],
+    "api_endpoints": ["GET /api/v1/invoices/12345", "POST /api/users/update/67890", "DELETE /api/documents/98765"],
+    "database_direct": ["SELECT * FROM users WHERE id = ?", "UPDATE accounts SET balance = ? WHERE id = ?", "DELETE FROM orders WHERE order_id = ?"],
+    "file_access": ["download.php?file_id=123", "view_document.jsp?doc=456", "/uploads/user_files/{file_id}"],
+    "session_objects": ["$_SESSION['current_user_id'] from URL", "session.user_id = request.parameter", "storing object IDs in client state"],
+    "predictable_ids": ["Sequential IDs: 1, 2, 3, 4", "Timestamp-based IDs", "Simple incrementing counters"],
+    "cross_reference": ["User A modifying User B's profile", "Accessing other tenants' data", "Horizontal privilege escalation"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "URL_Parameter|Path_Parameter|Form_Field|API_Endpoint|Database_Direct|File_Access",
+    "source": "url_param|path_param|form_field|json_payload|cookie_value",
+    "sink": "db_query|file_operation|object_retrieval|account_access|document_view",
+    "flow": "user_controlled_id→direct_object_access→unauthorized_data_access",
+    "code": "@GetMapping('/api/users/{userId}/profile') public UserProfile getProfile(@PathVariable Long userId) { return userService.findById(userId); }",
+    "payload": "GET /api/users/999/profile (accessing another user's profile)",
+    "fix": "Add ownership check: if (!currentUser.getId().equals(userId) && !currentUser.isAdmin()) throw new AccessDeniedException();"
+  },
+  "rules": [
+    "Trace user-controlled object identifiers to data access operations with exact line numbers and parameter flow",
+    "Provide specific IDOR attack demonstrating unauthorized access to another user's data",
+    "Suggest access control implementations (ownership validation, permission checks, indirect references)",
+    "Verify object type determines access risk (user data vs admin functions vs financial records)",
+    "Apply high confidence threshold; ignore if proper authorization checks or indirect mapping detected",
+    "Consider both horizontal (same privilege level) and vertical (privilege escalation) IDOR attacks",
+    "Flag financial, medical, and personally identifiable information access as critical",
+    "Analyze REST API endpoints and database operations for direct object access patterns",
+    "Check for predictable object identifiers that facilitate enumeration attacks",
+    "Identify cases where IDOR could lead to data breach, financial fraud, or privacy violations",
+    "Consider multi-tenant applications where tenant isolation must be enforced",
+    "Focus on web applications, APIs, and mobile backends with user-specific data access",
+    "Analyze both read and write operations that could be exploited through object reference manipulation"
+  ]
+}

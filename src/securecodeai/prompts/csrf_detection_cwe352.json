@@ -1,0 +1,39 @@
+{
+  "title": "Cross-Site Request Forgery (CSRF) Detection (CWE-352)",
+  "objective": "Identify exploitable CSRF vulnerabilities by analyzing state-changing operations that lack proper anti-CSRF protection, allowing attackers to force authenticated users to perform unintended actions. Report only confirmed paths where sensitive operations can be triggered via cross-origin requests with high confidence in unauthorized action execution.",
+  "method": {
+    "sources": ["Cross-origin HTTP requests", "Malicious websites", "Email links", "Social media posts", "Embedded iframes", "Image tags with GET requests"],
+    "flow": "Trace state-changing operations (POST, PUT, DELETE) that rely solely on session cookies without validating request origin or including anti-CSRF tokens",
+    "sinks": ["Form submissions", "AJAX requests", "State-changing endpoints", "Administrative functions", "Financial transactions", "Account modifications", "File operations"],
+    "validation": "Exclude if using CSRF tokens, SameSite cookies, Origin/Referer validation, custom headers requirement, or POST-only with token verification"
+  },
+  "patterns": {
+    "missing_token": ["<form method='POST' action='/transfer'>", "$.post('/delete', {id: itemId}) without token"],
+    "get_state_change": ["<a href='/delete?id=123'>Delete</a>", "GET /admin/delete_user?id=5"],
+    "predictable_token": ["<input name='csrf' value='user_id_timestamp'>", "MD5(session_id) as CSRF token"],
+    "token_bypass": ["CSRF token validation only on POST", "Missing token validation in AJAX endpoints"],
+    "subdomain_trust": ["document.domain = 'example.com'", "Overly broad CORS policies"],
+    "json_csrf": ["POST /api/transfer with JSON body", "Content-Type bypasses without custom headers"],
+    "advanced": ["Flash-based CSRF", "File upload CSRF", "WebSocket handshake CSRF", "OAuth state parameter bypass"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Missing_Token|Weak_Token|GET_State_Change|Token_Bypass",
+    "source": "external_website|malicious_email|social_media",
+    "sink": "form_submit|ajax_post|state_change_endpoint",
+    "flow": "external_request→session_validation→action_execution",
+    "code": "<form method='POST' action='/transfer'><input name='amount' value='1000'><input name='to' value='attacker'></form>",
+    "payload": "<img src='http://bank.com/transfer?amount=1000&to=attacker' />",
+    "fix": "Add CSRF token: <input type='hidden' name='csrf_token' value='<?php echo $_SESSION['csrf_token']; ?>' />"
+  },
+  "rules": [
+    "Trace state-changing operations and their protection mechanisms with line numbers",
+    "Provide attack vector specific to the vulnerability (form, AJAX, GET request)",
+    "Suggest framework-specific CSRF protection (Laravel _token, Django csrf_token, Express csurf)",
+    "Verify operation criticality determines protection requirements (financial vs informational)",
+    "Apply high confidence threshold; ignore if proper CSRF protection or SameSite=Strict detected",
+    "Consider both traditional form-based and modern AJAX-based CSRF attacks",
+    "Flag administrative and financial operations with missing CSRF protection as high priority",
+    "Analyze JSON endpoints that may be vulnerable to simple CSRF without custom headers"
+  ]
+}

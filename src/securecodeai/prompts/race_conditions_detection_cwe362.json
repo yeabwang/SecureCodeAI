@@ -1,0 +1,47 @@
+{
+  "title": "Race Conditions Detection (CWE-362)",
+  "objective": "Identify exploitable race condition vulnerabilities by analyzing concurrent code that accesses shared resources without proper synchronization, allowing attackers to manipulate timing between operations to bypass security checks, corrupt data, or gain unauthorized access. Report only confirmed paths where concurrent execution can lead to exploitable race conditions with high confidence in data corruption or security bypass.",
+  "method": {
+    "sources": ["Concurrent requests", "Multi-threaded operations", "Shared variables", "File operations", "Database transactions", "Session data", "Cache operations", "Resource allocations", "State changes"],
+    "flow": "Trace concurrent access to shared resources through synchronization mechanisms to identify time-of-check-time-of-use (TOCTOU) vulnerabilities and unsynchronized critical sections",
+    "sinks": ["File operations", "Database updates", "Memory writes", "Authentication checks", "Authorization validations", "Resource allocations", "State modifications", "Financial transactions", "Configuration changes"],
+    "validation": "Exclude if using proper synchronization (locks, mutexes, atomic operations), database transactions, or thread-safe implementations"
+  },
+  "patterns": {
+    "toctou_file": ["if (file_exists(path)) { read_file(path); }", "check file permissions then access", "stat() followed by open()"],
+    "toctou_auth": ["if (is_authenticated()) { perform_action(); }", "check session validity then execute", "authentication check race"],
+    "shared_variable": ["global counter without synchronization", "static variables in multi-threaded context", "unsynchronized access to shared state"],
+    "database_race": ["SELECT then UPDATE without transaction", "concurrent balance updates", "inventory race conditions"],
+    "session_race": ["session modification without locking", "concurrent session validation", "session fixation through race"],
+    "file_creation": ["temp file creation race", "predictable filename generation", "concurrent file access"],
+    "resource_allocation": ["memory allocation race", "connection pool race", "resource counting without sync"],
+    "double_spend": ["financial transaction race", "balance check then debit", "concurrent payment processing"],
+    "cache_race": ["cache check then update", "concurrent cache invalidation", "cache poisoning through timing"],
+    "microservice_race": ["distributed system race", "service discovery race", "eventual consistency race"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "TOCTOU_File|TOCTOU_Auth|Shared_Variable|Database_Race|Session_Race|File_Creation|Resource_Allocation|Double_Spend",
+    "source": "concurrent_request|multi_thread_op|shared_variable|file_operation|db_transaction",
+    "sink": "file_operation|db_update|memory_write|auth_check|resource_alloc",
+    "flow": "concurrent_access→shared_resource→unsynchronized_operation→race_condition_exploit",
+    "code": "if (user.getBalance() >= amount) { user.setBalance(user.getBalance() - amount); userRepository.save(user); } // Race condition in balance check",
+    "payload": "Two concurrent requests with amount=50 when balance=60 → both pass check → balance becomes -40",
+    "fix": "Use synchronization: @Transactional synchronized void withdraw(User user, int amount) { /* atomic operation */ } or database-level locking"
+  },
+  "rules": [
+    "Trace concurrent access patterns to shared resources with exact line numbers and timing analysis",
+    "Provide specific timing scenario demonstrating how concurrent execution leads to exploitation",
+    "Suggest synchronization mechanisms (locks, transactions, atomic operations, thread-safe collections)",
+    "Verify concurrency context determines race risk (multi-threading vs distributed systems vs async operations)",
+    "Apply high confidence threshold; ignore if proper synchronization or atomic operations detected",
+    "Consider both local race conditions and distributed system race conditions across services",
+    "Flag financial operations, authentication systems, and resource management as critical for race protection",
+    "Analyze multi-threaded applications, microservices, and async processing for race vulnerabilities",
+    "Check for TOCTOU vulnerabilities in file systems, authentication flows, and authorization checks",
+    "Identify cases where race conditions could lead to privilege escalation, data corruption, or financial fraud",
+    "Consider cloud-native applications, container orchestration, and distributed database systems",
+    "Focus on high-traffic web applications, payment systems, and concurrent data processing pipelines",
+    "Analyze event-driven architectures, message queues, and reactive systems for race condition patterns"
+  ]
+}

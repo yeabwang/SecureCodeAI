@@ -1,0 +1,47 @@
+{
+  "title": "Missing Security Headers Detection (CWE-693)",
+  "objective": "Identify missing or misconfigured security headers in web applications that fail to implement browser-based security controls, allowing attackers to conduct clickjacking, XSS, MIME sniffing, and protocol downgrade attacks. Report only confirmed cases where critical security headers are absent or improperly configured with high confidence in browser-based attack vectors.",
+  "method": {
+    "sources": ["HTTP responses", "Web server configurations", "Application middleware", "Reverse proxy settings", "CDN configurations", "Security middleware", "Framework defaults", "Static file serving", "API responses"],
+    "flow": "Analyze HTTP response headers and server configurations to identify missing or weak security headers that protect against client-side attacks",
+    "sinks": ["Browser rendering", "Content interpretation", "Frame embedding", "Script execution", "Resource loading", "Protocol negotiation", "Content type detection", "Referrer transmission", "Permission policies"],
+    "validation": "Exclude if security headers are properly configured with appropriate values for the application context and threat model"
+  },
+  "patterns": {
+    "csp_missing": ["Content-Security-Policy header absent", "no CSP or unsafe-inline/unsafe-eval", "overly permissive CSP policies"],
+    "xframe_missing": ["X-Frame-Options header missing", "no clickjacking protection", "ALLOWALL frame options"],
+    "xss_protection": ["X-XSS-Protection header missing or disabled", "X-Content-Type-Options: nosniff missing", "MIME sniffing vulnerabilities"],
+    "hsts_missing": ["Strict-Transport-Security header absent", "no HTTPS enforcement", "weak HSTS configuration"],
+    "referrer_policy": ["Referrer-Policy header missing", "sensitive data in referrer", "cross-origin information leakage"],
+    "permissions_policy": ["Permissions-Policy header missing", "Feature-Policy deprecated", "uncontrolled browser features"],
+    "cors_misconfigured": ["Access-Control-Allow-Origin: *", "overly permissive CORS", "credential exposure"],
+    "cache_control": ["Cache-Control missing for sensitive pages", "public caching of private data", "proxy cache poisoning"],
+    "server_disclosure": ["Server header reveals version", "X-Powered-By exposes technology", "information disclosure"],
+    "expect_ct": ["Expect-CT header missing", "certificate transparency bypass", "weak certificate validation"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "CSP_Missing|XFrame_Missing|XSS_Protection|HSTS_Missing|Referrer_Policy|Permissions_Policy|CORS_Misconfigured",
+    "source": "http_response|web_config|app_middleware|proxy_config|cdn_config",
+    "sink": "browser_rendering|content_interpretation|frame_embedding|script_execution|resource_loading",
+    "flow": "http_response→browser_security_controls→missing_header→attack_vector_enabled",
+    "code": "response.setHeader('Content-Type', 'text/html'); return '<html><body>Welcome</body></html>'; // Missing CSP, X-Frame-Options, etc.",
+    "payload": "<iframe src='https://vulnerable-site.com'></iframe> → Clickjacking attack succeeds",
+    "fix": "Add security headers: response.setHeader('Content-Security-Policy', \"default-src 'self'\"); response.setHeader('X-Frame-Options', 'DENY');"
+  },
+  "rules": [
+    "Analyze HTTP responses and server configurations with exact line numbers and header analysis",
+    "Provide specific attack scenario enabled by missing security header (clickjacking, XSS, MITM)",
+    "Suggest appropriate security headers with secure configuration values for the application context",
+    "Verify application type determines required headers (web app vs API vs static site vs SPA)",
+    "Apply high confidence threshold; ignore if security headers are properly configured or not applicable",
+    "Consider both missing headers and weak configurations (overly permissive policies)",
+    "Flag public-facing web applications, user authentication systems, and financial services as critical",
+    "Analyze different deployment scenarios (direct server, reverse proxy, CDN, cloud platform)",
+    "Check for framework-specific security middleware and their default configurations",
+    "Identify cases where missing headers could enable phishing, data theft, or user session compromise",
+    "Consider modern web application architectures (SPAs, PWAs, microservices, API gateways)",
+    "Focus on authentication pages, payment forms, and user dashboards requiring enhanced protection",
+    "Analyze security header interactions and conflicts that might reduce overall protection effectiveness"
+  ]
+}

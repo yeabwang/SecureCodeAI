@@ -1,0 +1,42 @@
+{
+  "title": "Path Traversal Detection (CWE-22)",
+  "objective": "Identify exploitable path traversal vulnerabilities by analyzing file operations that use unsanitized user input to construct file paths, allowing attackers to access files outside intended directories. Report only confirmed paths where directory traversal sequences can bypass access controls with high confidence in unauthorized file access.",
+  "method": {
+    "sources": ["URL parameters", "POST body data", "File upload names", "HTTP headers", "Cookie values", "Form inputs", "JSON/XML payloads", "Command line arguments"],
+    "flow": "Trace user-controlled input used in file operations without proper path validation or sanitization",
+    "sinks": ["File read operations", "File write operations", "Include/require statements", "File deletion", "Directory listing", "Template inclusion", "Log file access", "Configuration file reads"],
+    "validation": "Exclude if using whitelist validation, canonical path checking, chroot jails, or proper input sanitization"
+  },
+  "patterns": {
+    "classic_traversal": ["../../../etc/passwd", "..\\..\\windows\\system32\\config\\sam", "....//....//etc/passwd"],
+    "encoded_traversal": ["%2e%2e%2f", "%252e%252e%252f", "..%c0%af", "..%ef%bc%8f"],
+    "null_byte": ["../../../etc/passwd%00.txt", "..\\..\\boot.ini\x00.jpg"],
+    "absolute_paths": ["/etc/passwd", "C:\\windows\\system32\\config\\sam", "file:///etc/passwd"],
+    "zip_slip": ["../../../evil.sh in ZIP", "..\\..\\malware.exe in archive"],
+    "unicode_bypass": ["..%u2215", "..%u2216", "\u002e\u002e\u002f"],
+    "double_encoding": ["%252e%252e%252f", "%25252e%25252e%25252f"],
+    "mixed_separators": ["..\\../../../etc/passwd", "../..\\windows\\system32"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Classic_Traversal|Encoded_Traversal|Null_Byte|Absolute_Path|Zip_Slip",
+    "source": "url_param|post_data|file_upload|header|cookie",
+    "sink": "file_read|file_write|include|delete|directory_list",
+    "flow": "user_input→path_construction→file_operation",
+    "code": "open(os.path.join(base_dir, user_file), 'r')",
+    "payload": "../../../etc/passwd",
+    "fix": "Use os.path.abspath() and validate path is within allowed directory"
+  },
+  "rules": [
+    "Trace user input to file operations with exact line numbers and variable names",
+    "Provide specific traversal payload that would exploit the vulnerability",
+    "Suggest language-specific secure path handling (Python pathlib, Java nio.file.Paths)",
+    "Verify file operation type determines impact severity (read vs write vs execute)",
+    "Apply high confidence threshold; ignore if proper path validation or sandboxing detected",
+    "Consider both forward slash and backslash directory separators",
+    "Flag operations accessing sensitive system files (/etc/passwd, web.config) as critical",
+    "Analyze archive extraction and file upload scenarios for zip slip vulnerabilities",
+    "Check for both direct file operations and indirect operations through includes/templates",
+    "Identify cases where path traversal could lead to code execution via file writes or includes"
+  ]
+}

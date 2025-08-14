@@ -1,0 +1,47 @@
+{
+  "title": "CORS Misconfiguration Detection (CWE-942)",
+  "objective": "Identify exploitable CORS (Cross-Origin Resource Sharing) misconfiguration vulnerabilities by analyzing HTTP headers and policies that improperly allow cross-origin requests, enabling attackers to bypass same-origin policy and access sensitive data from victim browsers through malicious websites. Report only confirmed cases where CORS settings enable unauthorized cross-origin access with high confidence in data theft or credential exposure.",
+  "method": {
+    "sources": ["CORS headers", "Web server configurations", "Application middleware", "API gateway settings", "Reverse proxy configs", "CDN configurations", "Framework CORS policies", "Preflight responses", "Origin validation logic"],
+    "flow": "Analyze CORS header configurations and origin validation logic to identify overly permissive policies that allow unauthorized cross-origin requests to sensitive endpoints",
+    "sinks": ["Sensitive API endpoints", "Authentication endpoints", "User data access", "Administrative functions", "Payment processing", "File uploads", "Session management", "Personal information", "Business data"],
+    "validation": "Exclude if CORS policies properly restrict origins, credentials are not exposed, and sensitive endpoints have appropriate access controls"
+  },
+  "patterns": {
+    "wildcard_origins": ["Access-Control-Allow-Origin: *", "allow all origins with credentials", "overly broad origin patterns"],
+    "credential_exposure": ["Access-Control-Allow-Credentials: true with *", "credentials allowed with wildcard", "authentication bypass"],
+    "null_origin": ["Access-Control-Allow-Origin: null", "null origin acceptance", "file:// protocol abuse"],
+    "regex_bypass": ["origin validation regex flaws", "subdomain bypass attacks", "domain spoofing"],
+    "reflection_attacks": ["origin header reflection", "dynamic origin allowance", "origin validation bypass"],
+    "preflight_bypass": ["missing preflight for sensitive operations", "simple request exploitation", "method/header restrictions bypass"],
+    "subdomain_wildcard": ["*.example.com allowing attacker subdomains", "subdomain takeover risks", "wildcard subdomain abuse"],
+    "protocol_mismatch": ["HTTPS/HTTP origin mixing", "protocol downgrade attacks", "mixed content exploitation"],
+    "localhost_exposure": ["localhost/127.0.0.1 in allowed origins", "development origins in production", "internal network exposure"],
+    "header_pollution": ["multiple Access-Control-Allow-Origin headers", "header injection attacks", "browser parsing inconsistencies"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Wildcard_Origins|Credential_Exposure|Null_Origin|Regex_Bypass|Reflection_Attacks|Preflight_Bypass|Subdomain_Wildcard",
+    "source": "cors_header|web_config|app_middleware|api_gateway|proxy_config",
+    "sink": "sensitive_api|auth_endpoint|user_data|admin_function|payment_processing",
+    "flow": "cors_configuration→cross_origin_request→unauthorized_access→data_exfiltration",
+    "code": "response.setHeader('Access-Control-Allow-Origin', '*'); response.setHeader('Access-Control-Allow-Credentials', 'true'); // Dangerous combination",
+    "payload": "Malicious site: fetch('https://api.victim.com/user/profile', {credentials: 'include'}) → Steals user data",
+    "fix": "Restrict origins: response.setHeader('Access-Control-Allow-Origin', 'https://trusted-domain.com'); // No wildcard with credentials"
+  },
+  "rules": [
+    "Analyze CORS headers and configurations with exact line numbers and policy evaluation",
+    "Provide specific cross-origin attack scenario demonstrating data theft or credential exposure",
+    "Suggest secure CORS policies (explicit origin allowlists, credential restrictions, method limitations)",
+    "Verify endpoint sensitivity determines CORS risk (public APIs vs authenticated endpoints vs admin functions)",
+    "Apply high confidence threshold; ignore if CORS policies properly restrict access to trusted origins",
+    "Consider both client-side and server-side CORS implementation vulnerabilities",
+    "Flag APIs handling authentication, personal data, financial information, or administrative functions as critical",
+    "Analyze different deployment scenarios (API gateways, microservices, single-page applications)",
+    "Check for CORS policy inheritance, middleware ordering, and configuration precedence issues",
+    "Identify cases where CORS misconfiguration could enable account takeover, data breach, or CSRF attacks",
+    "Consider modern web application architectures (SPAs, mobile apps, third-party integrations)",
+    "Focus on REST APIs, GraphQL endpoints, and WebSocket connections with cross-origin access requirements",
+    "Analyze browser-specific CORS behavior and potential bypasses in different client environments"
+  ]
+}

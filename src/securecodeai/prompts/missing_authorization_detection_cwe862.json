@@ -1,0 +1,44 @@
+{
+  "title": "Missing Authorization Detection (CWE-862)",
+  "objective": "Identify exploitable missing authorization vulnerabilities by analyzing protected operations that fail to verify user permissions before execution, allowing attackers to access unauthorized functionality or data. Report only confirmed paths where sensitive operations lack proper authorization checks with high confidence in privilege escalation or unauthorized access.",
+  "method": {
+    "sources": ["HTTP requests", "API endpoints", "Function calls", "Database operations", "File system access", "Administrative functions", "User-generated content", "Direct object references"],
+    "flow": "Trace sensitive operations that should require authorization but lack proper permission validation before execution",
+    "sinks": ["Database modifications", "File operations", "Administrative functions", "User data access", "System configuration", "Financial transactions", "Password changes", "Account deletions"],
+    "validation": "Exclude if using proper role-based access control (RBAC), permission decorators, middleware checks, or explicit authorization validation"
+  },
+  "patterns": {
+    "missing_decorators": ["@app.route('/admin/delete') def delete_user():", "public function deleteAccount() { // no auth check }"],
+    "direct_object_access": ["GET /api/users/123/profile", "DELETE /orders/456", "PUT /accounts/789/balance"],
+    "admin_bypass": ["if (user.isAdmin) { // admin logic } // missing else block", "/admin/* routes without auth middleware"],
+    "api_endpoints": ["@RequestMapping('/api/sensitive') without @PreAuthorize", "app.post('/transfer') without auth middleware"],
+    "database_direct": ["DELETE FROM users WHERE id = ?", "UPDATE accounts SET balance = ? WHERE id = ?"],
+    "file_operations": ["unlink($_GET['file'])", "file_get_contents('/secure/' . $user_file)"],
+    "privilege_functions": ["promoteToAdmin(userId)", "changeUserRole(targetUser, newRole)", "resetPassword(userId)"],
+    "bypass_patterns": ["// TODO: Add auth check", "if (false && checkAuth())", "auth check commented out"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Missing_Decorator|Direct_Object|Admin_Bypass|API_Endpoint|Database_Direct|File_Operation",
+    "source": "http_request|api_call|function_call|direct_url|form_submit",
+    "sink": "db_modify|file_op|admin_func|user_data|system_config|financial_op",
+    "flow": "request→sensitive_operation_without_auth_check",
+    "code": "@app.route('/admin/users/<int:user_id>/delete', methods=['POST']) def delete_user(user_id):",
+    "payload": "POST /admin/users/123/delete (as low-privilege user)",
+    "fix": "Add authorization: @require_admin or if not current_user.is_admin(): abort(403)"
+  },
+  "rules": [
+    "Trace sensitive operations and verify presence of authorization checks with exact line numbers",
+    "Provide specific attack scenario showing unauthorized access to protected functionality",
+    "Suggest framework-specific authorization patterns (Flask @login_required, Spring @PreAuthorize)",
+    "Verify operation sensitivity determines authorization requirements (read vs write vs admin)",
+    "Apply high confidence threshold; ignore if proper authorization middleware or decorators detected",
+    "Consider both endpoint-level and operation-level authorization requirements",
+    "Flag administrative, financial, and user management functions as requiring strict authorization",
+    "Analyze direct object references that bypass authorization through URL manipulation",
+    "Check for authorization bypass through parameter tampering or HTTP method switching",
+    "Identify cases where missing authorization could lead to horizontal or vertical privilege escalation",
+    "Consider different user roles and permission levels in multi-tenant applications",
+    "Focus on REST API endpoints, administrative interfaces, and sensitive business logic functions"
+  ]
+}

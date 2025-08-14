@@ -1,0 +1,47 @@
+{
+  "title": "Exposure of Sensitive Information Detection (CWE-200)",
+  "objective": "Identify exploitable sensitive information exposure vulnerabilities by analyzing code paths where confidential data is inadvertently disclosed through error messages, logs, debug output, or insecure data handling, allowing attackers to gather intelligence for further attacks or directly access sensitive information. Report only confirmed paths where sensitive data can be exposed with high confidence in information leakage.",
+  "method": {
+    "sources": ["Database queries", "User inputs", "System configurations", "Authentication data", "Session information", "File contents", "Environment variables", "API responses", "Internal processing"],
+    "flow": "Trace sensitive data through processing, storage, and output mechanisms to identify unintended disclosure points where confidential information becomes accessible",
+    "sinks": ["Error messages", "Log files", "Debug output", "HTTP responses", "Client-side code", "Stack traces", "Configuration files", "Temporary files", "Cache entries"],
+    "validation": "Exclude if using proper data sanitization, error handling without sensitive details, secure logging practices, or information classification controls"
+  },
+  "patterns": {
+    "error_disclosure": ["catch(SQLException e) { return e.getMessage(); }", "500 error with full stack trace", "database connection errors with credentials"],
+    "debug_information": ["console.log(user_password)", "DEBUG mode exposing internal data", "verbose error messages in production"],
+    "log_exposure": ["logger.info('User password: ' + password)", "access logs with sensitive parameters", "application logs with PII"],
+    "response_leakage": ["JSON response with internal fields", "XML with sensitive attributes", "GraphQL introspection exposing schema"],
+    "client_side_exposure": ["<script>var apiKey = 'secret'</script>", "hardcoded credentials in JavaScript", "sensitive data in HTML comments"],
+    "file_exposure": [".env files in web directory", "backup files with database dumps", "configuration files with passwords"],
+    "cache_exposure": ["Redis cache with sensitive data", "browser cache with confidential info", "CDN caching private responses"],
+    "metadata_leakage": ["HTTP headers with internal info", "file metadata with user details", "database schema exposure"],
+    "timing_attacks": ["different response times for valid/invalid users", "timing-based user enumeration", "side-channel information leakage"],
+    "directory_listing": ["Apache directory browsing enabled", "AWS S3 bucket listing", "file system traversal revealing structure"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Error_Disclosure|Debug_Information|Log_Exposure|Response_Leakage|Client_Side_Exposure|File_Exposure|Cache_Exposure",
+    "source": "database_query|user_input|system_config|auth_data|session_info",
+    "sink": "error_message|log_file|debug_output|http_response|client_code",
+    "flow": "sensitive_data→processing→output_mechanism→information_disclosure",
+    "code": "catch (Exception e) { response.getWriter().println('Database error: ' + e.getMessage()); } // Exposes internal database details",
+    "payload": "Invalid SQL injection to trigger detailed error message",
+    "fix": "Use generic error messages: catch (Exception e) { logger.error('Database error', e); response.sendError(500, 'Internal server error'); }"
+  },
+  "rules": [
+    "Trace sensitive data to output mechanisms with exact line numbers and disclosure paths",
+    "Provide specific method to extract sensitive information from the identified exposure",
+    "Suggest information protection measures (generic error messages, data sanitization, secure logging)",
+    "Verify data sensitivity determines exposure risk (PII vs system info vs credentials vs business data)",
+    "Apply high confidence threshold; ignore if proper error handling or data classification detected",
+    "Consider both direct disclosure and indirect information leakage through timing or metadata",
+    "Flag applications handling financial, medical, or personally identifiable information as critical",
+    "Analyze error handling, logging frameworks, and debug configurations for information leakage",
+    "Check for sensitive data in client-accessible locations (JavaScript, HTML, CSS, cache)",
+    "Identify cases where information exposure could facilitate further attacks or privacy violations",
+    "Consider different deployment environments (development vs staging vs production) and their exposure risks",
+    "Focus on web applications, APIs, mobile apps, and cloud services with sensitive data processing",
+    "Analyze backup procedures, monitoring systems, and third-party integrations for potential data exposure"
+  ]
+}

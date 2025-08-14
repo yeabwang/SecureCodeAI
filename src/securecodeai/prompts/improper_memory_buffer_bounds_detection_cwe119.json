@@ -1,0 +1,47 @@
+{
+  "title": "Improper Memory Buffer Bounds Detection (CWE-119)",
+  "objective": "Identify exploitable memory buffer bounds vulnerabilities by analyzing unsafe memory operations in C/C++ code that can write or read beyond allocated buffer boundaries, allowing attackers to corrupt memory, execute arbitrary code, or cause denial of service. Report only confirmed paths where buffer boundaries can be violated with high confidence in memory corruption or code execution.",
+  "method": {
+    "sources": ["User input", "File data", "Network packets", "Command line arguments", "Environment variables", "Registry values", "Database records", "Configuration files", "IPC messages"],
+    "flow": "Trace untrusted data through memory operations that lack proper bounds checking, identifying paths where buffer overflows or underflows can occur",
+    "sinks": ["strcpy/strcat", "sprintf/vsprintf", "gets/fgets", "memcpy/memmove", "Array indexing", "Pointer arithmetic", "String operations", "Buffer allocations"],
+    "validation": "Exclude if using safe string functions (strncpy, snprintf), bounds checking, address sanitizers, or memory-safe languages"
+  },
+  "patterns": {
+    "unsafe_string_functions": ["strcpy(dest, src)", "strcat(dest, src)", "sprintf(buffer, format, ...)", "gets(buffer)"],
+    "buffer_overflow": ["char buffer[100]; strcpy(buffer, user_input)", "memcpy without size validation", "array access without bounds check"],
+    "format_string": ["printf(user_input)", "sprintf(buffer, user_format)", "syslog(LOG_INFO, user_data)"],
+    "heap_overflow": ["malloc(size); memcpy(ptr, data, larger_size)", "realloc with incorrect size calculation", "new[] with overflow"],
+    "stack_overflow": ["char local_buffer[FIXED_SIZE]; read(fd, local_buffer, user_size)", "alloca(user_controlled_size)"],
+    "integer_overflow": ["size_t len = strlen(input) + 1; char *buf = malloc(len)", "multiplication overflow in allocation"],
+    "off_by_one": ["for(i = 0; i <= array_size; i++)", "buffer[strlen(buffer)] = '\\0'", "fence post errors"],
+    "use_after_free": ["free(ptr); strcpy(ptr, data)", "delete ptr; ptr->method()", "dangling pointer access"],
+    "double_free": ["free(ptr); free(ptr)", "delete ptr; delete ptr", "multiple deallocation"],
+    "null_pointer": ["strcpy(NULL, src)", "memcpy(null_ptr, data, size)", "dereferencing NULL pointer"]
+  },
+  "report_format": {
+    "file": "path:line",
+    "type": "Buffer_Overflow|Format_String|Heap_Overflow|Stack_Overflow|Integer_Overflow|Use_After_Free|Double_Free",
+    "source": "user_input|file_data|network_packet|cmdline_arg|env_var",
+    "sink": "strcpy|sprintf|memcpy|array_access|pointer_arithmetic",
+    "flow": "untrusted_data→memory_operation→buffer_bounds_violation→memory_corruption",
+    "code": "char buffer[256]; strcpy(buffer, argv[1]); // No bounds checking on command line argument",
+    "payload": "A string longer than 256 characters to overflow the buffer",
+    "fix": "Use safe functions: strncpy(buffer, argv[1], sizeof(buffer)-1); buffer[sizeof(buffer)-1] = '\\0';"
+  },
+  "rules": [
+    "Trace untrusted data to unsafe memory operations with exact line numbers and data flow paths",
+    "Provide specific payload or input size that would trigger the buffer overflow",
+    "Suggest memory-safe alternatives (safe string functions, bounds checking, modern C++ containers)",
+    "Verify code context determines exploitability (stack vs heap, local vs network accessible)",
+    "Apply high confidence threshold; ignore if proper bounds checking or safe functions detected",
+    "Consider both direct buffer overflows and indirect overflows through length calculations",
+    "Flag network-facing and privileged applications as requiring immediate attention",
+    "Analyze both C and C++ code for unsafe memory operations and pointer arithmetic",
+    "Check for compiler protections (stack canaries, ASLR, DEP) that might mitigate exploitation",
+    "Identify cases where buffer overflows could lead to code execution, privilege escalation, or DoS",
+    "Consider embedded systems, network services, and system utilities as high-value targets",
+    "Focus on input parsing, file processing, and network protocol implementations",
+    "Analyze legacy C code and third-party libraries for known vulnerable patterns"
+  ]
+}
