@@ -1,0 +1,263 @@
+{
+  "supported_vulnerabilities": [
+    {
+      "id": 1,
+      "name": "Use of Broken Cryptographic Algorithms",
+      "cwe": "CWE-327",
+      "file": "broken_cryptographic_algorithms_detection_cwe327.json",
+      "description": "Deprecated encryption methods vulnerable to cryptanalytic attacks"
+    },
+    {
+      "id": 2,
+      "name": "Buffer Overflow Write",
+      "cwe": "CWE-787",
+      "file": "buffer_overflow_write_cwe787.json",
+      "description": "Memory corruption through writing beyond allocated buffer boundaries"
+    },
+    {
+      "id": 3,
+      "name": "Cleartext Storage of Sensitive Information",
+      "cwe": "CWE-312",
+      "file": "cleartext_storage_sensitive_info_detection_cwe312.json",
+      "description": "Unencrypted storage of passwords, keys, and other sensitive data"
+    },
+    {
+      "id": 4,
+      "name": "Command Injection",
+      "cwe": "CWE-77/CWE-78",
+      "file": "command_injection_detection_cwe77_78.json",
+      "description": "Execution of arbitrary system commands through unsanitized user input"
+    },
+    {
+      "id": 5,
+      "name": "CORS Misconfiguration",
+      "cwe": "CWE-942",
+      "file": "cors_misconfiguration_detection_cwe942.json",
+      "description": "Improper cross-origin resource sharing policies enabling data theft"
+    },
+    {
+      "id": 6,
+      "name": "Use of Cryptographically Weak PRNGs",
+      "cwe": "CWE-338",
+      "file": "cryptographically_weak_prng_detection_cwe338.json",
+      "description": "Predictable random number generators compromising token and key security"
+    },
+    {
+      "id": 7,
+      "name": "Cross-Site Request Forgery (CSRF)",
+      "cwe": "CWE-352",
+      "file": "csrf_detection_cwe352.json",
+      "description": "Unauthorized actions performed on behalf of authenticated users without consent"
+    },
+    {
+      "id": 8,
+      "name": "Debug Features Enabled in Production",
+      "cwe": "CWE-489",
+      "file": "debug_features_enabled_production_detection_cwe489.json",
+      "description": "Development functionality exposed in production revealing sensitive system information"
+    },
+    {
+      "id": 9,
+      "name": "Insecure Deserialization",
+      "cwe": "CWE-502",
+      "file": "deserialization_detection_cwe502.json",
+      "description": "Remote code execution through manipulation of serialized object data"
+    },
+    {
+      "id": 10,
+      "name": "Hard-coded Credentials",
+      "cwe": "CWE-798",
+      "file": "hardcoded_credentials_detection_cwe798.json",
+      "description": "Authentication credentials embedded directly in source code or configuration"
+    },
+    {
+      "id": 11,
+      "name": "Improper Authentication",
+      "cwe": "CWE-287",
+      "file": "improper_authentication_detection_cwe287.json",
+      "description": "Inadequate authentication mechanisms enabling unauthorized access"
+    },
+    {
+      "id": 12,
+      "name": "Improper Certificate Validation",
+      "cwe": "CWE-295",
+      "file": "improper_certificate_validation_detection_cwe295_Version2.json",
+      "description": "Insufficient validation of SSL/TLS certificates enabling man-in-the-middle attacks"
+    },
+    {
+      "id": 13,
+      "name": "Improper Link Resolution",
+      "cwe": "CWE-59",
+      "file": "improper_link_resolution_detection_cwe59.json",
+      "description": "Link following vulnerabilities enabling unauthorized file access"
+    },
+    {
+      "id": 14,
+      "name": "Improper Memory Buffer Bounds",
+      "cwe": "CWE-119",
+      "file": "improper_memory_buffer_bounds_detection_cwe119.json",
+      "description": "Memory access beyond allocated buffer boundaries causing security vulnerabilities"
+    },
+    {
+      "id": 15,
+      "name": "Improper Neutralization of Special Elements",
+      "cwe": "CWE-74",
+      "file": "improper_neutralization_special_elements_detection_cwe74.json",
+      "description": "Insufficient sanitization of special characters enabling various injection attacks"
+    },
+    {
+      "id": 16,
+      "name": "Improper Output Handling",
+      "cwe": "LLM05",
+      "file": "improper_output_handling_detection_llm05.json",
+      "description": "Inadequate handling of model outputs in LLM applications"
+    },
+    {
+      "id": 17,
+      "name": "Incorrect Authorization",
+      "cwe": "CWE-863",
+      "file": "incorrect_authorization_detection_cwe863.json",
+      "description": "Flawed authorization logic enabling unauthorized access to resources"
+    },
+    {
+      "id": 18,
+      "name": "Insecure Direct Object References",
+      "cwe": "CWE-639",
+      "file": "insecure_direct_object_references_detection_cwe639.json",
+      "description": "Direct access to objects without proper authorization checks"
+    },
+    {
+      "id": 19,
+      "name": "Insufficient Key Length",
+      "cwe": "CWE-326",
+      "file": "insufficient_key_length_detection_cwe326.json",
+      "description": "Cryptographic keys below current security standards enabling brute force attacks"
+    },
+    {
+      "id": 20,
+      "name": "JWT Algorithm Confusion",
+      "cwe": "CWE-327",
+      "file": "jwt_algorithm_confusion_detection_cwe327.json",
+      "description": "JSON Web Token signature bypass through algorithm manipulation attacks"
+    },
+    {
+      "id": 21,
+      "name": "Missing Authentication for Critical Function",
+      "cwe": "CWE-306",
+      "file": "missing_authentication_critical_function_detection_cwe306.json",
+      "description": "Critical functions accessible without proper authentication"
+    },
+    {
+      "id": 22,
+      "name": "Missing Authorization",
+      "cwe": "CWE-862",
+      "file": "missing_authorization_detection_cwe862.json",
+      "description": "Insufficient authorization checks allowing unauthorized resource access"
+    },
+    {
+      "id": 23,
+      "name": "Missing Security Headers",
+      "cwe": "CWE-693",
+      "file": "missing_security_headers_detection_cwe693.json",
+      "description": "Absent browser security controls enabling clickjacking and XSS attacks"
+    },
+    {
+      "id": 24,
+      "name": "NoSQL Injection",
+      "cwe": "CWE-943",
+      "file": "nosql_injection_detection_cwe943.json",
+      "description": "Query manipulation in NoSQL databases through unsanitized input"
+    },
+    {
+      "id": 25,
+      "name": "Out of Bounds Read",
+      "cwe": "CWE-125",
+      "file": "out_of_bounds_read_detection_cwe125.json",
+      "description": "Reading data outside allocated memory boundaries"
+    },
+    {
+      "id": 26,
+      "name": "Path Traversal",
+      "cwe": "CWE-22",
+      "file": "path_traversal_detection_cwe22.json",
+      "description": "Unauthorized file access through manipulated file paths and directory navigation"
+    },
+    {
+      "id": 27,
+      "name": "Prompt Injection",
+      "cwe": "LLM01",
+      "file": "prompt_injection_detection_llm01.json",
+      "description": "Manipulation of LLM prompts to bypass security controls"
+    },
+    {
+      "id": 28,
+      "name": "Race Conditions",
+      "cwe": "CWE-362",
+      "file": "race_conditions_detection_cwe362.json",
+      "description": "Concurrent access vulnerabilities in shared resources causing security failures"
+    },
+    {
+      "id": 29,
+      "name": "Sensitive Information Exposure",
+      "cwe": "CWE-200",
+      "file": "sensitive_information_exposure_detection_cwe200.json",
+      "description": "Unintended disclosure of sensitive information to unauthorized parties"
+    },
+    {
+      "id": 30,
+      "name": "Sensitive Information Disclosure",
+      "cwe": "LLM02",
+      "file": "sensitive_info_disclosure_detection_llm02.json",
+      "description": "Disclosure of sensitive information through LLM responses"
+    },
+    {
+      "id": 31,
+      "name": "Server-Side Request Forgery (SSRF)",
+      "cwe": "CWE-918",
+      "file": "server_side_request_forgery_detection_cwe918.json",
+      "description": "Unauthorized server-side requests to internal or external resources"
+    },
+    {
+      "id": 32,
+      "name": "Server-Side Template Injection (SSTI)",
+      "cwe": "CWE-94",
+      "file": "server_side_template_injection_detection_cwe94.json",
+      "description": "Template engine exploitation through user input enabling server-side code execution"
+    },
+    {
+      "id": 33,
+      "name": "SQL Injection",
+      "cwe": "CWE-89",
+      "file": "sql_injection_cwe89.json",
+      "description": "Malicious SQL code injection through unsanitized user input in database queries"
+    },
+    {
+      "id": 34,
+      "name": "Use After Free",
+      "cwe": "CWE-416",
+      "file": "use_after_free_detection_cwe416.json",
+      "description": "Access to freed memory locations leading to crashes or code execution"
+    },
+    {
+      "id": 35,
+      "name": "Cross-Site Scripting (XSS)",
+      "cwe": "CWE-79",
+      "file": "xss_detection_cwe79.json",
+      "description": "Client-side script injection enabling session hijacking and content manipulation"
+    },
+    {
+      "id": 36,
+      "name": "XML External Entity (XXE) Injection",
+      "cwe": "CWE-611",
+      "file": "xxe_injection_detection_cwe611.json",
+      "description": "Server-side request forgery and file disclosure through malicious XML processing"
+    }
+  ],
+  "metadata": {
+    "total_vulnerabilities": 36,
+    "created_by": "yeabwang",
+    "created_date": "2025-08-14",
+    "version": "1.0",
+    "description": "Comprehensive vulnerability detection patterns for security testing"
+  }
+}

@@ -1,0 +1,462 @@
+name: Security Analysis on Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, master, develop]
+  pull_request_review:
+    types: [submitted]
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "18"
+  SECURITY_ANALYSIS_TIMEOUT: "300"
+
+jobs:
+  security-analysis:
+    name: Automated Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+      checks: write
+      actions: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install security analysis dependencies
+        run: |
+          pip install --upgrade pip
+          pip install bandit safety semgrep truffleHog pip-audit
+          pip install sarif-om sarif-cli
+          pip install -r requirements.txt
+
+      - name: Get PR context
+        id: pr-context
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "pr_title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "pr_author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+          echo "base_branch=${{ github.event.pull_request.base.ref }}" >> $GITHUB_OUTPUT
+          echo "head_branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+          echo "base_sha=${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
+          echo "head_sha=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          git diff --name-only ${{ steps.pr-context.outputs.base_sha }}..${{ steps.pr-context.outputs.head_sha }} > changed_files.txt
+          echo "changed_files_count=$(wc -l < changed_files.txt)" >> $GITHUB_OUTPUT
+          echo "Changed files:"
+          cat changed_files.txt
+
+      - name: Filter security-relevant files
+        id: security-filter
+        run: |
+          # Filter for security-relevant file extensions
+          grep -E '\.(py|js|ts|java|php|rb|go|rs|cpp|c|h|sql|yaml|yml|json|xml|sh|ps1)$' changed_files.txt > security_files.txt || true
+          echo "security_files_count=$(wc -l < security_files.txt)" >> $GITHUB_OUTPUT
+          
+          # Check if any security-critical directories are affected
+          if git diff --name-only ${{ steps.pr-context.outputs.base_sha }}..${{ steps.pr-context.outputs.head_sha }} | grep -E '(auth|security|crypto|login|admin|api|config)' > /dev/null; then
+            echo "security_critical_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "security_critical_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run focused static analysis
+        id: static-analysis
+        continue-on-error: true
+        run: |
+          mkdir -p analysis_results
+          
+          # Run Bandit for Python files
+          if grep -q '\.py$' security_files.txt; then
+            echo "Running Bandit analysis..."
+            bandit -r . -f json -o analysis_results/bandit.json --include-glob="*.py" || true
+          fi
+          
+          # Run Semgrep for multiple languages
+          if [ -s security_files.txt ]; then
+            echo "Running Semgrep analysis..."
+            semgrep --config=auto --json --output=analysis_results/semgrep.json $(cat security_files.txt | tr '\n' ' ') || true
+          fi
+          
+          # Run Safety for Python dependencies
+          if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "Pipfile" ]; then
+            echo "Running Safety analysis..."
+            safety check --json --output analysis_results/safety.json || true
+          fi
+          
+          # Run TruffleHog for secrets
+          echo "Running TruffleHog for secrets..."
+          trufflehog git file://. --json --only-verified > analysis_results/trufflehog.json || true
+          
+          # Run pip-audit for Python dependencies
+          if [ -f "requirements.txt" ]; then
+            echo "Running pip-audit..."
+            pip-audit --format=json --output=analysis_results/pip-audit.json || true
+          fi
+
+      - name: Generate PR diff context
+        id: pr-diff
+        run: |
+          # Generate unified diff for analysis
+          git diff ${{ steps.pr-context.outputs.base_sha }}..${{ steps.pr-context.outputs.head_sha }} > pr_diff.patch
+          
+          # Extract added/modified lines for focused analysis
+          git diff ${{ steps.pr-context.outputs.base_sha }}..${{ steps.pr-context.outputs.head_sha }} --unified=3 | \
+            grep -E '^(\+[^+]|@@)' > added_lines.txt || true
+
+      - name: Prepare analysis input
+        id: analysis-input
+        run: |
+          # Create comprehensive analysis input
+          cat > analysis_input.json << EOF
+          {
+            "analysis_type": "pull_request",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "user": "${{ steps.pr-context.outputs.pr_author }}",
+            "repository": "${{ github.repository }}",
+            "pr_context": {
+              "number": ${{ steps.pr-context.outputs.pr_number }},
+              "title": "${{ steps.pr-context.outputs.pr_title }}",
+              "author": "${{ steps.pr-context.outputs.pr_author }}",
+              "base_branch": "${{ steps.pr-context.outputs.base_branch }}",
+              "head_branch": "${{ steps.pr-context.outputs.head_branch }}",
+              "base_sha": "${{ steps.pr-context.outputs.base_sha }}",
+              "head_sha": "${{ steps.pr-context.outputs.head_sha }}"
+            },
+            "change_summary": {
+              "total_files_changed": ${{ steps.changed-files.outputs.changed_files_count }},
+              "security_files_changed": ${{ steps.security-filter.outputs.security_files_count }},
+              "security_critical_changes": ${{ steps.security-filter.outputs.security_critical_changes }}
+            },
+            "static_analysis_results": {},
+            "pr_diff": "$(base64 -w 0 pr_diff.patch)"
+          }
+          EOF
+
+      - name: Load static analysis results
+        run: |
+          # Merge static analysis results into input
+          python3 << 'EOF'
+          import json
+          import os
+          import glob
+
+          # Load base input
+          with open('analysis_input.json', 'r') as f:
+              analysis_input = json.load(f)
+
+          # Load static analysis results
+          static_results = {}
+          
+          for result_file in glob.glob('analysis_results/*.json'):
+              tool_name = os.path.basename(result_file).replace('.json', '')
+              try:
+                  with open(result_file, 'r') as f:
+                      static_results[tool_name] = json.load(f)
+              except:
+                  static_results[tool_name] = {"error": "Failed to parse results"}
+
+          analysis_input['static_analysis_results'] = static_results
+
+          # Save updated input
+          with open('analysis_input.json', 'w') as f:
+              json.dump(analysis_input, f, indent=2)
+          EOF
+
+      - name: Run expert security analysis
+        id: expert-analysis
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANALYSIS_TIMEOUT: ${{ env.SECURITY_ANALYSIS_TIMEOUT }}
+        run: |
+          # Run the security analysis using the PR analysis prompt
+          python3 analysis/run_pr_analysis.py \
+            --input analysis_input.json \
+            --output analysis_output.json \
+            --prompt prompts/pr_analysis_prompt.json \
+            --timeout ${{ env.SECURITY_ANALYSIS_TIMEOUT }}
+
+      - name: Generate SARIF report
+        id: sarif-generation
+        run: |
+          # Convert analysis results to SARIF format
+          python3 << 'EOF'
+          import json
+          from datetime import datetime
+
+          # Load analysis results
+          with open('analysis_output.json', 'r') as f:
+              analysis = json.load(f)
+
+          # Generate SARIF report
+          sarif_report = {
+              "version": "2.1.0",
+              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+              "runs": [{
+                  "tool": {
+                      "driver": {
+                          "name": "Expert Security Analyzer",
+                          "version": "1.0.0",
+                          "informationUri": "https://github.com/${{ github.repository }}",
+                          "semanticVersion": "1.0.0"
+                      }
+                  },
+                  "results": []
+              }]
+          }
+
+          # Convert findings to SARIF results
+          if 'security_findings' in analysis.get('pr_analysis', {}):
+              for finding in analysis['pr_analysis']['security_findings']:
+                  sarif_result = {
+                      "ruleId": finding.get('cwe_id', 'SECURITY-001'),
+                      "level": finding.get('severity', 'warning').lower(),
+                      "message": {
+                          "text": finding.get('description', 'Security vulnerability detected')
+                      },
+                      "locations": [{
+                          "physicalLocation": {
+                              "artifactLocation": {
+                                  "uri": finding['location']['file_path']
+                              },
+                              "region": {
+                                  "startLine": finding['location'].get('line_number', 1),
+                                  "startColumn": finding['location'].get('column', 1)
+                              }
+                          }
+                      }]
+                  }
+                  
+                  # Add additional properties
+                  sarif_result["properties"] = {
+                      "confidence": finding.get('confidence', 0.5),
+                      "exploitability": finding.get('exploitability', 'unknown'),
+                      "finding_type": finding.get('finding_type', 'security'),
+                      "vulnerability_type": finding.get('vulnerability_type', 'unknown')
+                  }
+                  
+                  sarif_report["runs"][0]["results"].append(sarif_result)
+
+          # Save SARIF report
+          with open('security-analysis.sarif', 'w') as f:
+              json.dump(sarif_report, f, indent=2)
+          EOF
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: security-analysis.sarif
+          category: expert-security-analysis
+
+      - name: Generate PR comment
+        id: pr-comment
+        run: |
+          # Generate comprehensive PR comment
+          python3 << 'EOF'
+          import json
+          import base64
+
+          # Load analysis results
+          with open('analysis_output.json', 'r') as f:
+              analysis = json.load(f)
+
+          pr_analysis = analysis.get('pr_analysis', {})
+          metadata = pr_analysis.get('analysis_metadata', {})
+          findings = pr_analysis.get('security_findings', [])
+          recommendation = pr_analysis.get('pr_recommendation', {})
+
+          # Generate comment content
+          comment = f"""## 🔒 Automated Security Analysis Report
+
+          **Analysis completed at:** {metadata.get('timestamp', 'Unknown')}
+          **Files analyzed:** {metadata.get('files_analyzed', 0)}
+          **Overall risk level:** {metadata.get('overall_risk_level', 'Unknown').upper()}
+
+          ### 📊 Summary
+          - **Total findings:** {len(findings)}
+          - **Critical:** {len([f for f in findings if f.get('severity') == 'critical'])}
+          - **High:** {len([f for f in findings if f.get('severity') == 'high'])}
+          - **Medium:** {len([f for f in findings if f.get('severity') == 'medium'])}
+          - **Low:** {len([f for f in findings if f.get('severity') == 'low'])}
+
+          """
+
+          # Add blocking findings
+          blocking_findings = [f for f in findings if f.get('blocks_pr', False)]
+          if blocking_findings:
+              comment += "\n### ⛔ Blocking Issues (Must Fix Before Merge)\n"
+              for finding in blocking_findings:
+                  comment += f"""
+          #### {finding.get('vulnerability_type', 'Security Issue')} - {finding.get('severity', 'unknown').upper()}
+          **File:** `{finding['location']['file_path']}`
+          **Line:** {finding['location'].get('line_number', 'Unknown')}
+          
+          {finding.get('description', 'No description available')}
+          
+          **Quick Fix:**
+          ```{finding.get('language', 'text')}
+          {finding.get('quick_fix', {}).get('fixed_code', 'See detailed analysis for fix')}
+          ```
+          
+          ---
+          """
+
+          # Add warning findings
+          warning_findings = [f for f in findings if not f.get('blocks_pr', False) and f.get('severity') in ['high', 'medium']]
+          if warning_findings:
+              comment += "\n### ⚠️ Security Warnings\n"
+              for finding in warning_findings[:5]:  # Limit to 5 warnings
+                  comment += f"""
+          - **{finding.get('vulnerability_type', 'Security Issue')}** in `{finding['location']['file_path']}:{finding['location'].get('line_number', '?')}`
+            - {finding.get('description', 'No description available')}
+            - Confidence: {finding.get('confidence', 0):.1%}
+          """
+
+          # Add recommendation
+          action = recommendation.get('action', 'unknown')
+          if action == 'block':
+              comment += "\n### 🚫 **RECOMMENDATION: BLOCK MERGE**\n"
+          elif action == 'warn':
+              comment += "\n### ⚠️ **RECOMMENDATION: PROCEED WITH CAUTION**\n"
+          else:
+              comment += "\n### ✅ **RECOMMENDATION: SAFE TO MERGE**\n"
+
+          comment += f"\n{recommendation.get('reasoning', 'No reasoning provided')}\n"
+
+          # Add next steps
+          if recommendation.get('next_steps'):
+              comment += "\n### 📋 Next Steps\n"
+              for step in recommendation.get('next_steps', []):
+                  comment += f"- {step}\n"
+
+          # Add footer
+          comment += f"""
+          ---
+          📝 **Full analysis report available in [Security tab](/${{ github.repository }}/security)**
+          🔍 **SARIF report uploaded for detailed code scanning integration**
+          
+          *This analysis was performed automatically. For questions, contact the security team.*
+          """
+
+          # Save comment
+          with open('pr_comment.md', 'w') as f:
+              f.write(comment)
+          EOF
+
+      - name: Post PR comment
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            // Read comment content
+            let commentBody;
+            try {
+              commentBody = fs.readFileSync('pr_comment.md', 'utf8');
+            } catch (error) {
+              commentBody = `## 🔒 Security Analysis Failed
+              
+              The automated security analysis encountered an error. Please check the workflow logs for details.
+              
+              **Error:** ${error.message}
+              `;
+            }
+            
+            // Check if there's already a comment from this action
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🔒 Automated Security Analysis Report')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+
+      - name: Set PR status check
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            let status = 'success';
+            let description = 'Security analysis completed successfully';
+            
+            try {
+              const analysis = JSON.parse(fs.readFileSync('analysis_output.json', 'utf8'));
+              const recommendation = analysis.pr_analysis?.pr_recommendation?.action || 'unknown';
+              
+              if (recommendation === 'block') {
+                status = 'failure';
+                description = 'Security issues found that block merge';
+              } else if (recommendation === 'warn') {
+                status = 'success';
+                description = 'Security warnings found - review recommended';
+              }
+            } catch (error) {
+              status = 'error';
+              description = 'Security analysis failed to complete';
+            }
+            
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: status,
+              description: description,
+              context: 'security/expert-analysis'
+            });
+
+      - name: Archive analysis results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-analysis-results-pr-${{ steps.pr-context.outputs.pr_number }}
+          path: |
+            analysis_output.json
+            security-analysis.sarif
+            analysis_results/
+            pr_comment.md
+          retention-days: 30

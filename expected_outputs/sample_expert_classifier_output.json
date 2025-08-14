@@ -1,0 +1,164 @@
+{
+  "analysis_metadata": {
+    "file_path": "src/auth/password_manager.py",
+    "analysis_timestamp": "2025-08-14T09:45:00Z",
+    "total_findings": 3,
+    "confidence_score": 0.86,
+    "requires_detailed_analysis": true
+  },
+  "baseline_validation": [
+    {
+      "static_tool": "bandit",
+      "original_finding_id": "B303",
+      "validation_result": "confirmed",
+      "expert_severity": "high",
+      "confidence": 0.95,
+      "reasoning": "MD5 usage confirmed in password hashing context - legitimate security vulnerability with high impact"
+    },
+    {
+      "static_tool": "bandit", 
+      "original_finding_id": "B101",
+      "validation_result": "false_positive",
+      "expert_severity": "low",
+      "confidence": 0.88,
+      "reasoning": "Assert statement found in test file path (/tests/), not production code - safe usage"
+    },
+    {
+      "static_tool": "semgrep",
+      "original_finding_id": "crypto-weak-hash",
+      "validation_result": "confirmed",
+      "expert_severity": "high", 
+      "confidence": 0.92,
+      "reasoning": "Correlates with bandit finding - MD5 used for security-critical password hashing"
+    },
+    {
+      "static_tool": "safety",
+      "original_finding_id": "CVE-2022-40897",
+      "validation_result": "needs_investigation",
+      "expert_severity": "medium",
+      "confidence": 0.75,
+      "reasoning": "Outdated setuptools version - need to verify if vulnerable functions are actually used"
+    }
+  ],
+  "expert_findings": [
+    {
+      "finding_id": "exp-001-crypto-md5-passwords",
+      "vulnerability_type": "Use of Broken Cryptographic Algorithms",
+      "cwe_id": "CWE-327",
+      "severity": "high",
+      "confidence": 0.95,
+      "exploitability": "high",
+      "location": {
+        "file_path": "src/auth/password_manager.py",
+        "start_line": 45,
+        "end_line": 47,
+        "start_column": 12,
+        "end_column": 58,
+        "function_name": "hash_password",
+        "class_name": "PasswordManager"
+      },
+      "affected_code": {
+        "snippet": "def hash_password(self, password):\n    return hashlib.md5(password.encode()).hexdigest()",
+        "context_lines_before": 2,
+        "context_lines_after": 2
+      },
+      "vulnerability_description": "MD5 cryptographic hash function used for password hashing - vulnerable to rainbow table and collision attacks",
+      "potential_impact": "Complete compromise of user passwords enabling account takeover attacks and unauthorized access to sensitive data",
+      "requires_detailed_analysis": true,
+      "analysis_priority": "high",
+      "related_findings": []
+    },
+    {
+      "finding_id": "exp-002-injection-sql",
+      "vulnerability_type": "SQL Injection", 
+      "cwe_id": "CWE-89",
+      "severity": "critical",
+      "confidence": 0.89,
+      "exploitability": "high",
+      "location": {
+        "file_path": "src/auth/password_manager.py",
+        "start_line": 67,
+        "end_line": 69,
+        "start_column": 8,
+        "end_column": 45,
+        "function_name": "authenticate_user",
+        "class_name": "PasswordManager"
+      },
+      "affected_code": {
+        "snippet": "query = f\"SELECT id, password_hash FROM users WHERE username = '{username}'\"",
+        "context_lines_before": 3,
+        "context_lines_after": 3
+      },
+      "vulnerability_description": "Direct string interpolation of user input into SQL query without parameterization or sanitization",
+      "potential_impact": "Complete database compromise including user data extraction, modification, or deletion; potential for privilege escalation and system takeover",
+      "requires_detailed_analysis": true,
+      "analysis_priority": "high",
+      "related_findings": []
+    },
+    {
+      "finding_id": "exp-003-auth-timing",
+      "vulnerability_type": "Information Disclosure",
+      "cwe_id": "CWE-200",
+      "severity": "medium",
+      "confidence": 0.74,
+      "exploitability": "medium",
+      "location": {
+        "file_path": "src/auth/password_manager.py", 
+        "start_line": 89,
+        "end_line": 95,
+        "start_column": 4,
+        "end_column": 25,
+        "function_name": "verify_credentials",
+        "class_name": "PasswordManager"
+      },
+      "affected_code": {
+        "snippet": "if user_exists:\n    if password_matches:\n        return True\n    else:\n        time.sleep(0.1)\n        return False\nelse:\n    return False",
+        "context_lines_before": 2,
+        "context_lines_after": 1
+      },
+      "vulnerability_description": "Timing attack vulnerability in authentication logic - different execution paths for valid vs invalid usernames",
+      "potential_impact": "Username enumeration through timing analysis, enabling targeted credential attacks",
+      "requires_detailed_analysis": true,
+      "analysis_priority": "medium",
+      "related_findings": ["exp-002-injection-sql"]
+    }
+  ],
+  "suspicious_patterns": [
+    {
+      "pattern_type": "hardcoded_credentials",
+      "description": "Potential hardcoded database connection string with embedded credentials",
+      "location": {
+        "file_path": "src/auth/password_manager.py",
+        "line_range": "12-14"
+      },
+      "risk_level": "medium",
+      "requires_investigation": true
+    },
+    {
+      "pattern_type": "unsafe_deserialization",
+      "description": "Pickle usage detected - potential for code execution if deserializing untrusted data",
+      "location": {
+        "file_path": "src/auth/password_manager.py",
+        "line_range": "156-158"
+      },
+      "risk_level": "high",
+      "requires_investigation": true
+    }
+  ],
+  "recommendations": {
+    "immediate_actions": [
+      "Replace MD5 password hashing with bcrypt or Argon2",
+      "Fix SQL injection vulnerability using parameterized queries",
+      "Implement consistent timing for authentication responses",
+      "Review and secure hardcoded credentials"
+    ],
+    "detailed_analysis_needed": [
+      "Use of Broken Cryptographic Algorithms",
+      "SQL Injection",
+      "Information Disclosure"
+    ],
+    "false_positive_suppressions": [
+      "bandit-B101: Assert usage in test files"
+    ]
+  }
+}

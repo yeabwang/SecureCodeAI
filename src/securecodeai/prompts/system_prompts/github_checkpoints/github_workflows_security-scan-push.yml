@@ -1,0 +1,728 @@
+name: Comprehensive Security Scan on Push
+
+on:
+  push:
+    branches: [main, master, develop, release/*, feature/*]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+  schedule:
+    # Run weekly security scan on main branch
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      scan_depth:
+        description: 'Scan depth level'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - 'full'
+          - 'incremental'
+          - 'critical-only'
+      track_trends:
+        description: 'Enable trend tracking'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "18"
+  SECURITY_SCAN_TIMEOUT: "600"
+  TREND_TRACKING_ENABLED: "true"
+
+jobs:
+  security-scan:
+    name: Comprehensive Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for trend analysis
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install comprehensive security tools
+        run: |
+          # Python security tools
+          pip install --upgrade pip
+          pip install bandit safety semgrep truffleHog pip-audit
+          pip install cyclonedx-bom safety-db
+          pip install sarif-om sarif-cli
+          
+          # Additional security scanners
+          pip install detect-secrets
+          pip install vulture  # Dead code detection
+          pip install dlint     # Dockerfile linting
+          
+          # Install project dependencies
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+          
+          # Node.js security tools
+          if [ -f "package.json" ]; then
+            npm install
+            npm install -g npm-audit-resolver
+            npm install -g retire
+          fi
+
+      - name: Get push context
+        id: push-context
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          echo "commit_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "pusher=${{ github.actor }}" >> $GITHUB_OUTPUT
+          echo "repository=${{ github.repository }}" >> $GITHUB_OUTPUT
+          echo "workflow_run_id=${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "scan_timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+          
+          # Determine scan type
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "scan_type=scheduled" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "scan_type=manual" >> $GITHUB_OUTPUT
+          else
+            echo "scan_type=push" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Analyze repository structure
+        id: repo-analysis
+        run: |
+          # Count different file types for context
+          echo "total_files=$(find . -type f | wc -l)" >> $GITHUB_OUTPUT
+          echo "python_files=$(find . -name "*.py" | wc -l)" >> $GITHUB_OUTPUT
+          echo "js_files=$(find . -name "*.js" -o -name "*.ts" | wc -l)" >> $GITHUB_OUTPUT
+          echo "config_files=$(find . -name "*.yaml" -o -name "*.yml" -o -name "*.json" -o -name "*.xml" | wc -l)" >> $GITHUB_OUTPUT
+          echo "docker_files=$(find . -name "Dockerfile*" -o -name "docker-compose*" | wc -l)" >> $GITHUB_OUTPUT
+          
+          # Identify security-critical directories
+          security_dirs=""
+          for dir in auth authentication security crypto login admin api config; do
+            if [ -d "$dir" ] || find . -type d -name "*$dir*" | grep -q .; then
+              security_dirs="$security_dirs,$dir"
+            fi
+          done
+          echo "security_critical_dirs=${security_dirs#,}" >> $GITHUB_OUTPUT
+
+      - name: Get historical data for trend analysis
+        id: historical-data
+        if: env.TREND_TRACKING_ENABLED == 'true'
+        run: |
+          mkdir -p trend_analysis
+          
+          # Try to get previous scan results
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/actions/artifacts?name=security-scan-results*" \
+            --jq '.artifacts | sort_by(.created_at) | reverse | .[0:5]' > previous_artifacts.json || echo "[]" > previous_artifacts.json
+          
+          # Download previous results if available
+          if [ "$(jq length previous_artifacts.json)" -gt 0 ]; then
+            echo "historical_data_available=true" >> $GITHUB_OUTPUT
+            # Download and extract previous results for comparison
+            jq -r '.[0].archive_download_url' previous_artifacts.json > latest_artifact_url.txt || echo ""
+          else
+            echo "historical_data_available=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run comprehensive static analysis
+        id: static-analysis
+        continue-on-error: true
+        run: |
+          mkdir -p scan_results
+          
+          echo "Starting comprehensive security scan..."
+          
+          # Python Security Analysis
+          if [ ${{ steps.repo-analysis.outputs.python_files }} -gt 0 ]; then
+            echo "Running Python security analysis..."
+            
+            # Bandit - Python security linter
+            bandit -r . -f json -o scan_results/bandit.json || true
+            
+            # Safety - Python dependency vulnerability scanner
+            safety check --json --output scan_results/safety.json || true
+            
+            # pip-audit - Python package vulnerability scanner
+            pip-audit --format=json --output=scan_results/pip-audit.json || true
+            
+            # Semgrep - Static analysis for Python
+            semgrep --config=python --json --output=scan_results/semgrep-python.json . || true
+          fi
+          
+          # JavaScript/Node.js Security Analysis
+          if [ ${{ steps.repo-analysis.outputs.js_files }} -gt 0 ] && [ -f "package.json" ]; then
+            echo "Running JavaScript security analysis..."
+            
+            # npm audit
+            npm audit --json > scan_results/npm-audit.json || true
+            
+            # Retire.js - JavaScript library vulnerability scanner
+            retire --js --json --outputformat=json --outputpath=scan_results/retire.json . || true
+            
+            # Semgrep for JavaScript
+            semgrep --config=javascript --json --output=scan_results/semgrep-js.json . || true
+          fi
+          
+          # Multi-language Security Analysis
+          echo "Running multi-language security analysis..."
+          
+          # Semgrep comprehensive rules
+          semgrep --config=auto --json --output=scan_results/semgrep-auto.json . || true
+          
+          # TruffleHog - Secret detection
+          trufflehog git file://. --json --only-verified > scan_results/trufflehog.json || true
+          
+          # detect-secrets - Alternative secret scanner
+          detect-secrets scan --all-files --output scan_results/detect-secrets.json . || true
+          
+          # Container Security (if Dockerfiles present)
+          if [ ${{ steps.repo-analysis.outputs.docker_files }} -gt 0 ]; then
+            echo "Running container security analysis..."
+            
+            # Dockerfile linting
+            find . -name "Dockerfile*" -exec dlint {} \; > scan_results/dlint.txt 2>&1 || true
+          fi
+          
+          # Code Quality Security Analysis
+          echo "Running code quality security analysis..."
+          
+          # Dead code detection (potential security through obscurity issues)
+          vulture . --json > scan_results/vulture.json || true
+
+      - name: Generate Software Bill of Materials (SBOM)
+        id: sbom-generation
+        run: |
+          echo "Generating SBOM for supply chain security..."
+          
+          # Generate Python SBOM
+          if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
+            cyclonedx-py -o scan_results/sbom-python.json . || true
+          fi
+          
+          # Generate Node.js SBOM
+          if [ -f "package.json" ]; then
+            npx @cyclonedx/cyclonedx-npm --output-file scan_results/sbom-nodejs.json || true
+          fi
+
+      - name: Prepare comprehensive analysis input
+        id: analysis-input
+        run: |
+          # Create comprehensive analysis input
+          cat > analysis_input.json << EOF
+          {
+            "analysis_type": "branch_push_comprehensive",
+            "timestamp": "${{ steps.push-context.outputs.scan_timestamp }}",
+            "user": "${{ steps.push-context.outputs.pusher }}",
+            "repository": "${{ steps.push-context.outputs.repository }}",
+            "branch": "${{ steps.push-context.outputs.branch_name }}",
+            "commit_sha": "${{ steps.push-context.outputs.commit_sha }}",
+            "scan_context": {
+              "scan_type": "${{ steps.push-context.outputs.scan_type }}",
+              "workflow_run_id": "${{ steps.push-context.outputs.workflow_run_id }}",
+              "scan_depth": "${{ github.event.inputs.scan_depth || 'full' }}",
+              "trend_tracking_enabled": ${{ env.TREND_TRACKING_ENABLED }}
+            },
+            "repository_profile": {
+              "total_files": ${{ steps.repo-analysis.outputs.total_files }},
+              "python_files": ${{ steps.repo-analysis.outputs.python_files }},
+              "js_files": ${{ steps.repo-analysis.outputs.js_files }},
+              "config_files": ${{ steps.repo-analysis.outputs.config_files }},
+              "docker_files": ${{ steps.repo-analysis.outputs.docker_files }},
+              "security_critical_dirs": "${{ steps.repo-analysis.outputs.security_critical_dirs }}"
+            },
+            "static_analysis_results": {},
+            "historical_context": {
+              "has_previous_data": ${{ steps.historical-data.outputs.historical_data_available || false }},
+              "trend_analysis_enabled": ${{ env.TREND_TRACKING_ENABLED }}
+            }
+          }
+          EOF
+
+      - name: Load comprehensive static analysis results
+        run: |
+          # Merge all static analysis results into input
+          python3 << 'EOF'
+          import json
+          import os
+          import glob
+          from pathlib import Path
+
+          # Load base input
+          with open('analysis_input.json', 'r') as f:
+              analysis_input = json.load(f)
+
+          # Load all static analysis results
+          static_results = {}
+          scan_results_dir = Path('scan_results')
+          
+          if scan_results_dir.exists():
+              for result_file in scan_results_dir.glob('*.json'):
+                  tool_name = result_file.stem
+                  try:
+                      with open(result_file, 'r') as f:
+                          content = f.read().strip()
+                          if content:
+                              static_results[tool_name] = json.loads(content)
+                          else:
+                              static_results[tool_name] = {"status": "no_results"}
+                  except Exception as e:
+                      static_results[tool_name] = {"error": f"Failed to parse: {str(e)}"}
+              
+              # Load text-based results
+              for result_file in scan_results_dir.glob('*.txt'):
+                  tool_name = result_file.stem
+                  try:
+                      with open(result_file, 'r') as f:
+                          static_results[tool_name] = {"output": f.read()}
+                  except Exception as e:
+                      static_results[tool_name] = {"error": f"Failed to read: {str(e)}"}
+
+          analysis_input['static_analysis_results'] = static_results
+
+          # Calculate analysis statistics
+          total_findings = 0
+          tools_with_findings = []
+          
+          for tool, results in static_results.items():
+              if isinstance(results, dict):
+                  if 'results' in results and isinstance(results['results'], list):
+                      findings = len(results['results'])
+                      total_findings += findings
+                      if findings > 0:
+                          tools_with_findings.append(tool)
+                  elif 'vulnerabilities' in results and isinstance(results['vulnerabilities'], list):
+                      findings = len(results['vulnerabilities'])
+                      total_findings += findings
+                      if findings > 0:
+                          tools_with_findings.append(tool)
+
+          analysis_input['scan_statistics'] = {
+              "total_static_findings": total_findings,
+              "tools_with_findings": tools_with_findings,
+              "tools_executed": list(static_results.keys())
+          }
+
+          # Save updated input
+          with open('analysis_input.json', 'w') as f:
+              json.dump(analysis_input, f, indent=2)
+          EOF
+
+      - name: Load previous scan results for trend analysis
+        id: trend-data
+        if: steps.historical-data.outputs.historical_data_available == 'true'
+        run: |
+          # Download and process previous scan results
+          python3 << 'EOF'
+          import json
+          import requests
+          import os
+          from datetime import datetime, timedelta
+
+          try:
+              # Load current analysis input
+              with open('analysis_input.json', 'r') as f:
+                  current_analysis = json.load(f)
+              
+              # Create trend analysis structure
+              trend_data = {
+                  "previous_scans": [],
+                  "trend_analysis": {
+                      "vulnerability_trend": "stable",
+                      "new_vulnerabilities": [],
+                      "resolved_vulnerabilities": [],
+                      "security_score_trend": "stable"
+                  }
+              }
+              
+              # TODO: Implement actual previous data download and comparison
+              # This would download previous artifacts and compare results
+              
+              current_analysis['trend_analysis'] = trend_data
+              
+              # Save updated analysis input
+              with open('analysis_input.json', 'w') as f:
+                  json.dump(current_analysis, f, indent=2)
+                  
+          except Exception as e:
+              print(f"Trend analysis preparation failed: {e}")
+              # Continue without trend data
+          EOF
+
+      - name: Run expert comprehensive security analysis
+        id: expert-analysis
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANALYSIS_TIMEOUT: ${{ env.SECURITY_SCAN_TIMEOUT }}
+        run: |
+          # Run the comprehensive security analysis
+          python3 analysis/run_comprehensive_analysis.py \
+            --input analysis_input.json \
+            --output analysis_output.json \
+            --prompt prompts/comprehensive_scan_prompt.json \
+            --timeout ${{ env.SECURITY_SCAN_TIMEOUT }}
+
+      - name: Generate comprehensive SARIF report
+        id: sarif-generation
+        run: |
+          # Generate detailed SARIF report with trend information
+          python3 << 'EOF'
+          import json
+          from datetime import datetime
+
+          # Load analysis results
+          with open('analysis_output.json', 'r') as f:
+              analysis = json.load(f)
+
+          # Generate comprehensive SARIF report
+          sarif_report = {
+              "version": "2.1.0",
+              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+              "runs": [{
+                  "tool": {
+                      "driver": {
+                          "name": "Comprehensive Security Scanner",
+                          "version": "2.0.0",
+                          "informationUri": "https://github.com/${{ github.repository }}",
+                          "semanticVersion": "2.0.0",
+                          "rules": []
+                      }
+                  },
+                  "results": [],
+                  "properties": {
+                      "scan_type": "comprehensive",
+                      "branch": "${{ steps.push-context.outputs.branch_name }}",
+                      "commit_sha": "${{ steps.push-context.outputs.commit_sha }}",
+                      "scan_timestamp": "${{ steps.push-context.outputs.scan_timestamp }}"
+                  }
+              }]
+          }
+
+          # Convert findings to SARIF results
+          comprehensive_analysis = analysis.get('comprehensive_analysis', {})
+          if 'security_findings' in comprehensive_analysis:
+              for finding in comprehensive_analysis['security_findings']:
+                  # Create SARIF rule if not exists
+                  rule_id = finding.get('cwe_id', f"SECURITY-{finding.get('finding_id', '001')}")
+                  
+                  # Add rule definition
+                  rule_def = {
+                      "id": rule_id,
+                      "name": finding.get('vulnerability_type', 'SecurityVulnerability'),
+                      "shortDescription": {
+                          "text": finding.get('title', 'Security vulnerability detected')
+                      },
+                      "fullDescription": {
+                          "text": finding.get('description', 'A security vulnerability was detected in the code.')
+                      },
+                      "defaultConfiguration": {
+                          "level": finding.get('severity', 'warning').lower()
+                      },
+                      "properties": {
+                          "category": "security",
+                          "confidence": finding.get('confidence', 0.5),
+                          "exploitability": finding.get('exploitability', 'unknown')
+                      }
+                  }
+                  
+                  # Add rule if not already present
+                  existing_rules = [r['id'] for r in sarif_report["runs"][0]["tool"]["driver"]["rules"]]
+                  if rule_id not in existing_rules:
+                      sarif_report["runs"][0]["tool"]["driver"]["rules"].append(rule_def)
+                  
+                  # Create SARIF result
+                  sarif_result = {
+                      "ruleId": rule_id,
+                      "level": finding.get('severity', 'warning').lower(),
+                      "message": {
+                          "text": finding.get('description', 'Security vulnerability detected')
+                      },
+                      "locations": [{
+                          "physicalLocation": {
+                              "artifactLocation": {
+                                  "uri": finding['location']['file_path']
+                              },
+                              "region": {
+                                  "startLine": finding['location'].get('line_number', 1),
+                                  "startColumn": finding['location'].get('column', 1)
+                              }
+                          }
+                      }],
+                      "properties": {
+                          "confidence": finding.get('confidence', 0.5),
+                          "exploitability": finding.get('exploitability', 'unknown'),
+                          "vulnerability_type": finding.get('vulnerability_type', 'unknown'),
+                          "trend_status": finding.get('trend_status', 'new'),
+                          "static_tool_correlation": finding.get('static_tool_correlation', {})
+                      }
+                  }
+                  
+                  sarif_report["runs"][0]["results"].append(sarif_result)
+
+          # Save SARIF report
+          with open('comprehensive-security-scan.sarif', 'w') as f:
+              json.dump(sarif_report, f, indent=2)
+          EOF
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: comprehensive-security-scan.sarif
+          category: comprehensive-security-scan
+
+      - name: Generate security dashboard data
+        id: dashboard-data
+        run: |
+          # Generate data for security dashboard and trend tracking
+          python3 << 'EOF'
+          import json
+          from datetime import datetime
+
+          # Load analysis results
+          with open('analysis_output.json', 'r') as f:
+              analysis = json.load(f)
+
+          comprehensive_analysis = analysis.get('comprehensive_analysis', {})
+          metadata = comprehensive_analysis.get('analysis_metadata', {})
+          findings = comprehensive_analysis.get('security_findings', [])
+          trend_analysis = comprehensive_analysis.get('trend_analysis', {})
+
+          # Generate dashboard summary
+          dashboard_data = {
+              "scan_metadata": {
+                  "timestamp": "${{ steps.push-context.outputs.scan_timestamp }}",
+                  "branch": "${{ steps.push-context.outputs.branch_name }}",
+                  "commit_sha": "${{ steps.push-context.outputs.commit_sha }}",
+                  "scan_type": "${{ steps.push-context.outputs.scan_type }}",
+                  "workflow_run_id": "${{ steps.push-context.outputs.workflow_run_id }}"
+              },
+              "security_metrics": {
+                  "total_vulnerabilities": len(findings),
+                  "critical_count": len([f for f in findings if f.get('severity') == 'critical']),
+                  "high_count": len([f for f in findings if f.get('severity') == 'high']),
+                  "medium_count": len([f for f in findings if f.get('severity') == 'medium']),
+                  "low_count": len([f for f in findings if f.get('severity') == 'low']),
+                  "security_score": metadata.get('security_score', 0),
+                  "overall_risk_level": metadata.get('overall_risk_level', 'unknown')
+              },
+              "trend_metrics": trend_analysis,
+              "repository_profile": {
+                  "total_files_scanned": metadata.get('files_scanned', 0),
+                  "lines_of_code_analyzed": metadata.get('lines_analyzed', 0),
+                  "tools_executed": metadata.get('tools_executed', []),
+                  "coverage_percentage": metadata.get('coverage_percentage', 0)
+              }
+          }
+
+          # Save dashboard data
+          with open('security-dashboard.json', 'w') as f:
+              json.dump(dashboard_data, f, indent=2)
+          EOF
+
+      - name: Create security report issue (for critical findings)
+        id: security-issue
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            try {
+              const analysis = JSON.parse(fs.readFileSync('analysis_output.json', 'utf8'));
+              const comprehensiveAnalysis = analysis.comprehensive_analysis || {};
+              const findings = comprehensiveAnalysis.security_findings || [];
+              
+              const criticalFindings = findings.filter(f => f.severity === 'critical');
+              const highFindings = findings.filter(f => f.severity === 'high');
+              
+              if (criticalFindings.length > 0 || highFindings.length > 5) {
+                // Create or update security issue
+                const issueTitle = `🚨 Security Scan Alert - ${criticalFindings.length} Critical, ${highFindings.length} High Severity Issues`;
+                
+                let issueBody = `## Security Scan Results - ${{ steps.push-context.outputs.scan_timestamp }}
+                
+                **Branch:** \`${{ steps.push-context.outputs.branch_name }}\`
+                **Commit:** \`${{ steps.push-context.outputs.commit_sha }}\`
+                **Scan Type:** ${{ steps.push-context.outputs.scan_type }}
+                
+                ### 🔴 Critical Issues (${criticalFindings.length})
+                `;
+                
+                criticalFindings.forEach((finding, index) => {
+                  issueBody += `
+                ${index + 1}. **${finding.vulnerability_type}** - \`${finding.location.file_path}\`
+                   - Line: ${finding.location.line_number || 'Unknown'}
+                   - Confidence: ${(finding.confidence * 100).toFixed(1)}%
+                   - ${finding.description}
+                `;
+                });
+                
+                if (highFindings.length > 0) {
+                  issueBody += `
+                
+                ### 🟠 High Severity Issues (${highFindings.length})
+                `;
+                  
+                  highFindings.slice(0, 10).forEach((finding, index) => {
+                    issueBody += `
+                ${index + 1}. **${finding.vulnerability_type}** - \`${finding.location.file_path}:${finding.location.line_number || '?'}\`
+                `;
+                  });
+                  
+                  if (highFindings.length > 10) {
+                    issueBody += `\n... and ${highFindings.length - 10} more high severity issues.`;
+                  }
+                }
+                
+                issueBody += `
+                
+                ### 📊 Full Report
+                - **SARIF Report:** Available in [Security tab](/${{ github.repository }}/security)
+                - **Workflow Run:** [View Details](/${{ github.repository }}/actions/runs/${{ github.run_id }})
+                
+                ---
+                *This issue was automatically created by the security scan workflow.*
+                `;
+                
+                // Check for existing security issues
+                const issues = await github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  labels: 'security,automated-scan'
+                });
+                
+                const existingIssue = issues.data.find(issue => 
+                  issue.title.includes('Security Scan Alert')
+                );
+                
+                if (existingIssue) {
+                  // Update existing issue
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: existingIssue.number,
+                    title: issueTitle,
+                    body: issueBody
+                  });
+                } else {
+                  // Create new issue
+                  await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: issueTitle,
+                    body: issueBody,
+                    labels: ['security', 'automated-scan', 'critical']
+                  });
+                }
+              }
+            } catch (error) {
+              console.log('Failed to create/update security issue:', error.message);
+            }
+
+      - name: Update security metrics in repository
+        id: metrics-update
+        run: |
+          # Update repository security metrics file
+          mkdir -p .github/security-metrics
+          
+          # Create or update metrics file
+          cat > .github/security-metrics/latest-scan.json << 'EOF'
+          {
+            "last_scan": "${{ steps.push-context.outputs.scan_timestamp }}",
+            "branch": "${{ steps.push-context.outputs.branch_name }}",
+            "commit": "${{ steps.push-context.outputs.commit_sha }}",
+            "workflow_run": "${{ steps.push-context.outputs.workflow_run_id }}"
+          }
+          EOF
+          
+          # Copy dashboard data
+          cp security-dashboard.json .github/security-metrics/dashboard-data.json || true
+
+      - name: Archive comprehensive scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-results-${{ steps.push-context.outputs.branch_name }}-${{ github.run_number }}
+          path: |
+            analysis_output.json
+            comprehensive-security-scan.sarif
+            security-dashboard.json
+            scan_results/
+            .github/security-metrics/
+          retention-days: 90
+
+      - name: Post scan summary to commit status
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            
+            let status = 'success';
+            let description = 'Comprehensive security scan completed';
+            
+            try {
+              const analysis = JSON.parse(fs.readFileSync('analysis_output.json', 'utf8'));
+              const comprehensiveAnalysis = analysis.comprehensive_analysis || {};
+              const findings = comprehensiveAnalysis.security_findings || [];
+              
+              const criticalCount = findings.filter(f => f.severity === 'critical').length;
+              const highCount = findings.filter(f => f.severity === 'high').length;
+              
+              if (criticalCount > 0) {
+                status = 'failure';
+                description = `${criticalCount} critical, ${highCount} high severity issues found`;
+              } else if (highCount > 10) {
+                status = 'failure';
+                description = `${highCount} high severity issues found`;
+              } else if (highCount > 0) {
+                status = 'success';
+                description = `${highCount} high severity issues found - review recommended`;
+              } else {
+                description = `Security scan passed - ${findings.length} total findings`;
+              }
+            } catch (error) {
+              status = 'error';
+              description = 'Security scan failed to complete';
+            }
+            
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: status,
+              description: description,
+              context: 'security/comprehensive-scan'
+            });
