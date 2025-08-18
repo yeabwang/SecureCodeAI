@@ -2,6 +2,31 @@
 
 **Security analysis tool combining multi-tool static analysis with AI-powered enhancement.**
 
+Heyy!  
+
+This project was inspired by [claude-code-security](https://github.com/anthropics/claude-code-security-review) and [llm-security-scanner](https://github.com/iknowjason/llm-security-scanner), which both do a great job performing context-aware security scans on PR changes.  
+
+I felt they miss some core points:  
+
+- **PR-only analysis**: Focusing only on PR changes may overlook security issues, especially when dependencies are involved.  
+- **Context window limits**: Feeding all code into an LLM reduces accuracy as context grows ([context rot](https://research.trychroma.com/context-rot)).  
+- **Ground truth support**: Small filtering works, but without solid ground truth, LLM outputs are hard to fully trust.  
+- **Cost**: Large codebases and chunking increase token usage and price.  
+
+### Approach
+
+To address this, I started with the hypothesis of combining **static tools** (like Bandit, Safety) with **LLM analysis** in a well-designed context. So far:  
+
+- Implemented static tool scanning + a simple Groq enhancer to expand context based on static analysis.
+- Added 36+ vulnerability-specific prompts for detailed analysis with the high-level scanner and deep analyzer.  
+- Developing a **two-level LLM scanning approach**:
+  1. **High-level scanner**: Takes static analysis, uses prompt templates to detect potential issues, scores severity and decides whether it's (simple and provide suggestion, or detailed analysis).  
+  2. **Deep analyzer**: Gathers all evidence (code chunk, templates, suspected issues) and reasons to provide detailed suggestions.  
+
+This approach reduces token usage, improves context awareness, and defines ground rules for each security issue.  
+
+This repo is under active change so shit might happen :)
+
 ## 🎯 What it  Delivers
 
 A robust security analysis foundation with:
@@ -11,7 +36,7 @@ A robust security analysis foundation with:
 - **Multiple output formats** (JSON, Table, SARIF ready)
 - **Extensible plugin architecture** for future analysis tools
 
-**Real-world validation**: Successfully detects 33+ security findings across 22 files, 3,271 lines of code.
+**validation(tested on our own codebase)**: Successfully detects 33+ security findings across 22 files, 3,271 lines of code. :) we need to work on security here too
 
 ## 🚀 Quick Start
 
@@ -216,7 +241,7 @@ python -m pytest tests/test_integration.py  # End-to-end tests
 - **LLM Client**: 79% coverage
 - **Configuration**: 74% coverage
 
-## 🔍 Real-World Performance
+## 🔍  Performance
 
 **Validation Results** (scanning SecureCodeAI itself):
 - ✅ **33 findings detected** across multiple vulnerability types
