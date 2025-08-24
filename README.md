@@ -185,7 +185,7 @@ python test_realistic_scenario.py
 ## Notes
 
 **Security Warning**: Test files contain intentional vulnerabilities for demonstration purposes. Exercise caution when running tests.
-**Development Status**: Active development - so shit might happen, appoloigies in adance :)
+**Development Status**: Active development - so shit might happen, apologies in adance :)
 **Contributing**: Issues and pull requests welcome. Please star the repository if you find it useful.
 
 ---
