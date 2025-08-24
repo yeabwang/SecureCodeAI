@@ -1,0 +1,264 @@
+{
+  "metrics": {
+    "analysis_time": 1.1344420909881592,
+    "files_analyzed": 3,
+    "total_findings": 20,
+    "critical_findings": 0,
+    "high_findings": 8,
+    "vulnerability_types": [
+      "code_injection",
+      "broken_access_control",
+      "hardcoded_secrets",
+      "sql_injection",
+      "other"
+    ],
+    "top_vulnerabilities": [
+      [
+        "other",
+        [
+          "id='e3a655d0-29cc-4f2c-bb61-0e4062568d95' title='Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' description='\\n\\nAlso detected by: semgrep' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.95 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/api_security.py'), start_line=185, end_line=185, start_column=5, end_column=66) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'semgrep_severity': 'WARNING', 'extra': {'message': 'Running flask app with host 0.0.0.0 could expose the server publicly.', 'metadata': {'cwe': ['CWE-668: Exposure of Resource to Wrong Sphere'], 'owasp': ['A01:2021 - Broken Access Control'], 'category': 'security', 'technology': ['flask'], 'references': ['https://owasp.org/Top10/A01_2021-Broken_Access_Control'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Other'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'shortlink': 'https://sg.run/eLby'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'semgrep_metadata': {'semgrep_rule_id': 'python.flask.security.audit.debug-enabled.debug-enabled', 'semgrep_severity': 'WARNING', 'extra': {'message': \"Detected Flask app with debug=True. Do not deploy to production with this flag enabled as it will leak sensitive information. Instead, consider using Flask configuration variables or setting 'debug' using system environment variables.\", 'metadata': {'cwe': ['CWE-489: Active Debug Code'], 'owasp': 'A06:2017 - Security Misconfiguration', 'references': ['https://labs.detectify.com/2015/10/02/how-patreon-got-hacked-publicly-exposed-werkzeug-debugger/'], 'category': 'security', 'technology': ['flask'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Active Debug Code'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.debug-enabled.debug-enabled', 'shortlink': 'https://sg.run/dKrd'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}}} remediation_advice=None fix_suggestion=None",
+          "id='12254e31-21ad-47dd-bfb0-187b36320be5' title='Semgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query' description='\\n\\nAlso detected by: semgrep' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.95 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=84, end_line=84, start_column=13, end_column=34) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.lang.security.audit.formatted-sql-query.formatted-sql-query' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.lang.security.audit.formatted-sql-query.formatted-sql-query', 'semgrep_severity': 'WARNING', 'extra': {'message': 'Detected possible formatted SQL query. Use parameterized queries instead.', 'metadata': {'owasp': ['A01:2017 - Injection', 'A03:2021 - Injection'], 'cwe': [\"CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')\"], 'references': ['https://stackoverflow.com/questions/775296/mysql-parameterized-queries'], 'category': 'security', 'technology': ['python'], 'cwe2022-top25': True, 'cwe2021-top25': True, 'subcategory': ['audit'], 'likelihood': 'LOW', 'impact': 'HIGH', 'confidence': 'LOW', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['SQL Injection'], 'source': 'https://semgrep.dev/r/python.lang.security.audit.formatted-sql-query.formatted-sql-query', 'shortlink': 'https://sg.run/EkWw'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'semgrep_metadata': {'semgrep_rule_id': 'python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query', 'semgrep_severity': 'ERROR', 'extra': {'message': 'Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL Injection. In order to execute raw query safely, prepared statement should be used. SQLAlchemy provides TextualSQL to easily used prepared statement with named parameters. For complex SQL composition, use SQL Expression Language or Schema Definition Language. In most cases, SQLAlchemy ORM will be a better option.', 'metadata': {'cwe': [\"CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')\"], 'owasp': ['A01:2017 - Injection', 'A03:2021 - Injection'], 'references': ['https://docs.sqlalchemy.org/en/14/core/tutorial.html#using-textual-sql', 'https://www.tutorialspoint.com/sqlalchemy/sqlalchemy_quick_guide.htm', 'https://docs.sqlalchemy.org/en/14/core/tutorial.html#using-more-specific-text-with-table-expression-literal-column-and-expression-column'], 'category': 'security', 'technology': ['sqlalchemy'], 'cwe2022-top25': True, 'cwe2021-top25': True, 'subcategory': ['audit'], 'likelihood': 'LOW', 'impact': 'HIGH', 'confidence': 'LOW', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['SQL Injection'], 'source': 'https://semgrep.dev/r/python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query', 'shortlink': 'https://sg.run/2b1L'}, 'severity': 'ERROR', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}}} remediation_advice=None fix_suggestion=None",
+          "id='72ad4cc5-6e3a-4d1f-96c5-d1e20c6936ec' title='Semgrep: python.jwt.security.unverified-jwt-decode.unverified-jwt-decode' description='' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.85 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=149, end_line=149, start_column=82, end_column=87) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.jwt.security.unverified-jwt-decode.unverified-jwt-decode' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.jwt.security.unverified-jwt-decode.unverified-jwt-decode', 'semgrep_severity': 'ERROR', 'extra': {'message': \"Detected JWT token decoded with 'verify=False'. This bypasses any integrity checks for the token which means the token could be tampered with by malicious actors. Ensure that the JWT token is verified.\", 'fix': 'True', 'metadata': {'owasp': ['A02:2017 - Broken Authentication', 'A07:2021 - Identification and Authentication Failures'], 'cwe': ['CWE-287: Improper Authentication'], 'references': ['https://github.com/we45/Vulnerable-Flask-App/blob/752ee16087c0bfb79073f68802d907569a1f0df7/app/app.py#L96'], 'category': 'security', 'technology': ['jwt'], 'cwe2022-top25': True, 'cwe2021-top25': True, 'subcategory': ['audit'], 'likelihood': 'MEDIUM', 'impact': 'MEDIUM', 'confidence': 'MEDIUM', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Improper Authentication'], 'source': 'https://semgrep.dev/r/python.jwt.security.unverified-jwt-decode.unverified-jwt-decode', 'shortlink': 'https://sg.run/6nyB'}, 'severity': 'ERROR', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}} remediation_advice=None fix_suggestion=None",
+          "id='7954598f-d1a1-4037-860e-0bc8cb29e840' title='Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' description='\\n\\nAlso detected by: semgrep' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.95 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=238, end_line=238, start_column=5, end_column=51) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'semgrep_severity': 'WARNING', 'extra': {'message': 'Running flask app with host 0.0.0.0 could expose the server publicly.', 'metadata': {'cwe': ['CWE-668: Exposure of Resource to Wrong Sphere'], 'owasp': ['A01:2021 - Broken Access Control'], 'category': 'security', 'technology': ['flask'], 'references': ['https://owasp.org/Top10/A01_2021-Broken_Access_Control'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Other'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'shortlink': 'https://sg.run/eLby'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'semgrep_metadata': {'semgrep_rule_id': 'python.flask.security.audit.debug-enabled.debug-enabled', 'semgrep_severity': 'WARNING', 'extra': {'message': \"Detected Flask app with debug=True. Do not deploy to production with this flag enabled as it will leak sensitive information. Instead, consider using Flask configuration variables or setting 'debug' using system environment variables.\", 'metadata': {'cwe': ['CWE-489: Active Debug Code'], 'owasp': 'A06:2017 - Security Misconfiguration', 'references': ['https://labs.detectify.com/2015/10/02/how-patreon-got-hacked-publicly-exposed-werkzeug-debugger/'], 'category': 'security', 'technology': ['flask'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Active Debug Code'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.debug-enabled.debug-enabled', 'shortlink': 'https://sg.run/dKrd'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}}} remediation_advice=None fix_suggestion=None",
+          "id='35b5e774-7047-4ff4-b5db-25dbb62c4789' title='Semgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query' description='\\n\\nAlso detected by: semgrep' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.95 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/database_layer.py'), start_line=205, end_line=205, start_column=13, end_column=34) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.lang.security.audit.formatted-sql-query.formatted-sql-query' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.lang.security.audit.formatted-sql-query.formatted-sql-query', 'semgrep_severity': 'WARNING', 'extra': {'message': 'Detected possible formatted SQL query. Use parameterized queries instead.', 'metadata': {'owasp': ['A01:2017 - Injection', 'A03:2021 - Injection'], 'cwe': [\"CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')\"], 'references': ['https://stackoverflow.com/questions/775296/mysql-parameterized-queries'], 'category': 'security', 'technology': ['python'], 'cwe2022-top25': True, 'cwe2021-top25': True, 'subcategory': ['audit'], 'likelihood': 'LOW', 'impact': 'HIGH', 'confidence': 'LOW', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['SQL Injection'], 'source': 'https://semgrep.dev/r/python.lang.security.audit.formatted-sql-query.formatted-sql-query', 'shortlink': 'https://sg.run/EkWw'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'semgrep_metadata': {'semgrep_rule_id': 'python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query', 'semgrep_severity': 'ERROR', 'extra': {'message': 'Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL Injection. In order to execute raw query safely, prepared statement should be used. SQLAlchemy provides TextualSQL to easily used prepared statement with named parameters. For complex SQL composition, use SQL Expression Language or Schema Definition Language. In most cases, SQLAlchemy ORM will be a better option.', 'metadata': {'cwe': [\"CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')\"], 'owasp': ['A01:2017 - Injection', 'A03:2021 - Injection'], 'references': ['https://docs.sqlalchemy.org/en/14/core/tutorial.html#using-textual-sql', 'https://www.tutorialspoint.com/sqlalchemy/sqlalchemy_quick_guide.htm', 'https://docs.sqlalchemy.org/en/14/core/tutorial.html#using-more-specific-text-with-table-expression-literal-column-and-expression-column'], 'category': 'security', 'technology': ['sqlalchemy'], 'cwe2022-top25': True, 'cwe2021-top25': True, 'subcategory': ['audit'], 'likelihood': 'LOW', 'impact': 'HIGH', 'confidence': 'LOW', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['SQL Injection'], 'source': 'https://semgrep.dev/r/python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query', 'shortlink': 'https://sg.run/2b1L'}, 'severity': 'ERROR', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}}} remediation_advice=None fix_suggestion=None",
+          "id='72ad4cc5-6e3a-4d1f-96c5-d1e20c6936ec' title='Semgrep: python.jwt.security.unverified-jwt-decode.unverified-jwt-decode' description='' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.95 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=149, end_line=149, start_column=82, end_column=87) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.jwt.security.unverified-jwt-decode.unverified-jwt-decode' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.jwt.security.unverified-jwt-decode.unverified-jwt-decode', 'semgrep_severity': 'ERROR', 'extra': {'message': \"Detected JWT token decoded with 'verify=False'. This bypasses any integrity checks for the token which means the token could be tampered with by malicious actors. Ensure that the JWT token is verified.\", 'fix': 'True', 'metadata': {'owasp': ['A02:2017 - Broken Authentication', 'A07:2021 - Identification and Authentication Failures'], 'cwe': ['CWE-287: Improper Authentication'], 'references': ['https://github.com/we45/Vulnerable-Flask-App/blob/752ee16087c0bfb79073f68802d907569a1f0df7/app/app.py#L96'], 'category': 'security', 'technology': ['jwt'], 'cwe2022-top25': True, 'cwe2021-top25': True, 'subcategory': ['audit'], 'likelihood': 'MEDIUM', 'impact': 'MEDIUM', 'confidence': 'MEDIUM', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Improper Authentication'], 'source': 'https://semgrep.dev/r/python.jwt.security.unverified-jwt-decode.unverified-jwt-decode', 'shortlink': 'https://sg.run/6nyB'}, 'severity': 'ERROR', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'llm_validated': True, 'llm_confidence_boost': 0.1} remediation_advice='Verify the authenticity of the JWT token by checking the signature before decoding and using its contents. Ensure that the secret key used for verification is secure and not hardcoded.' fix_suggestion=\"Use a library like PyJWT to verify the token, e.g., `jwt.decode(token, secret_key, algorithms=['HS256'])`\"",
+          "id='e3a655d0-29cc-4f2c-bb61-0e4062568d95' title='Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' description='\\n\\nAlso detected by: semgrep' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=1.0 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/api_security.py'), start_line=185, end_line=185, start_column=5, end_column=66) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'semgrep_severity': 'WARNING', 'extra': {'message': 'Running flask app with host 0.0.0.0 could expose the server publicly.', 'metadata': {'cwe': ['CWE-668: Exposure of Resource to Wrong Sphere'], 'owasp': ['A01:2021 - Broken Access Control'], 'category': 'security', 'technology': ['flask'], 'references': ['https://owasp.org/Top10/A01_2021-Broken_Access_Control'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Other'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'shortlink': 'https://sg.run/eLby'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'semgrep_metadata': {'semgrep_rule_id': 'python.flask.security.audit.debug-enabled.debug-enabled', 'semgrep_severity': 'WARNING', 'extra': {'message': \"Detected Flask app with debug=True. Do not deploy to production with this flag enabled as it will leak sensitive information. Instead, consider using Flask configuration variables or setting 'debug' using system environment variables.\", 'metadata': {'cwe': ['CWE-489: Active Debug Code'], 'owasp': 'A06:2017 - Security Misconfiguration', 'references': ['https://labs.detectify.com/2015/10/02/how-patreon-got-hacked-publicly-exposed-werkzeug-debugger/'], 'category': 'security', 'technology': ['flask'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Active Debug Code'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.debug-enabled.debug-enabled', 'shortlink': 'https://sg.run/dKrd'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}}, 'llm_validated': True, 'llm_confidence_boost': 0.1} remediation_advice=\"Avoid running the Flask app with the 'debug' flag set to True in production, as it can allow an attacker to execute arbitrary code. Instead, set the 'host' parameter to a specific IP address or hostname to restrict access.\" fix_suggestion=\"Replace `app.run()` with `app.run(host='127.0.0.1', debug=False)` to restrict access to the local machine and disable debug mode.\"",
+          "id='7954598f-d1a1-4037-860e-0bc8cb29e840' title='Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' description='\\n\\nAlso detected by: semgrep' vulnerability_type=<VulnerabilityType.OTHER: 'other'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=1.0 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=238, end_line=238, start_column=5, end_column=51) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'semgrep_severity': 'WARNING', 'extra': {'message': 'Running flask app with host 0.0.0.0 could expose the server publicly.', 'metadata': {'cwe': ['CWE-668: Exposure of Resource to Wrong Sphere'], 'owasp': ['A01:2021 - Broken Access Control'], 'category': 'security', 'technology': ['flask'], 'references': ['https://owasp.org/Top10/A01_2021-Broken_Access_Control'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Other'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host', 'shortlink': 'https://sg.run/eLby'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'semgrep_metadata': {'semgrep_rule_id': 'python.flask.security.audit.debug-enabled.debug-enabled', 'semgrep_severity': 'WARNING', 'extra': {'message': \"Detected Flask app with debug=True. Do not deploy to production with this flag enabled as it will leak sensitive information. Instead, consider using Flask configuration variables or setting 'debug' using system environment variables.\", 'metadata': {'cwe': ['CWE-489: Active Debug Code'], 'owasp': 'A06:2017 - Security Misconfiguration', 'references': ['https://labs.detectify.com/2015/10/02/how-patreon-got-hacked-publicly-exposed-werkzeug-debugger/'], 'category': 'security', 'technology': ['flask'], 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Active Debug Code'], 'source': 'https://semgrep.dev/r/python.flask.security.audit.debug-enabled.debug-enabled', 'shortlink': 'https://sg.run/dKrd'}, 'severity': 'WARNING', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}}, 'llm_validated': True, 'llm_confidence_boost': 0.1} remediation_advice=\"Avoid running the Flask app with the 'debug' flag set to True in production, as it can allow an attacker to execute arbitrary code. Instead, set the 'host' parameter to a specific IP address or hostname to restrict access.\" fix_suggestion=\"Replace `app.run()` with `app.run(host='127.0.0.1', debug=False)` to restrict access to the local machine and disable debug mode.\""
+        ]
+      ],
+      [
+        "code_injection",
+        [
+          "id='09314466-ba5b-4447-a30f-cead90bc5c4e' title='Bandit B201: flask_debug_true' description='A Flask app appears to be run with debug=True, which exposes the Werkzeug debugger and allows the execution of arbitrary code.' vulnerability_type=<VulnerabilityType.CODE_INJECTION: 'code_injection'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.7 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/api_security.py'), start_line=185, end_line=185, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B201' cwe_id=None owasp_category=None code_snippet=\"184     # \ud83d\udea8 MEDIUM: Insecure server configuration\\n185     app.run(debug=True, host='0.0.0.0', port=8080, threaded=True)\\n\" surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 40718) metadata={'bandit_test_id': 'B201', 'bandit_test_name': 'flask_debug_true', 'bandit_confidence': 'MEDIUM', 'bandit_severity': 'HIGH'} remediation_advice=None fix_suggestion=None",
+          "id='37821d4a-917e-44ba-84d8-7334e0095cc3' title='Bandit B201: flask_debug_true' description='A Flask app appears to be run with debug=True, which exposes the Werkzeug debugger and allows the execution of arbitrary code.' vulnerability_type=<VulnerabilityType.CODE_INJECTION: 'code_injection'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.7 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=238, end_line=238, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B201' cwe_id=None owasp_category=None code_snippet=\"237     # \ud83d\udea8 MEDIUM: Debug mode enabled in production\\n238     app.run(debug=True, host='0.0.0.0', port=5000)\\n\" surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B201', 'bandit_test_name': 'flask_debug_true', 'bandit_confidence': 'MEDIUM', 'bandit_severity': 'HIGH'} remediation_advice=None fix_suggestion=None",
+          "id='09314466-ba5b-4447-a30f-cead90bc5c4e' title='Bandit B201: flask_debug_true' description='A Flask app appears to be run with debug=True, which exposes the Werkzeug debugger and allows the execution of arbitrary code.' vulnerability_type=<VulnerabilityType.CODE_INJECTION: 'code_injection'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.7999999999999999 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/api_security.py'), start_line=185, end_line=185, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B201' cwe_id=None owasp_category=None code_snippet=\"184     # \ud83d\udea8 MEDIUM: Insecure server configuration\\n185     app.run(debug=True, host='0.0.0.0', port=8080, threaded=True)\\n\" surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 40718) metadata={'bandit_test_id': 'B201', 'bandit_test_name': 'flask_debug_true', 'bandit_confidence': 'MEDIUM', 'bandit_severity': 'HIGH', 'llm_validated': True, 'llm_confidence_boost': 0.1} remediation_advice='Set debug=False in production environments to prevent arbitrary code execution and disable the Werkzeug debugger.' fix_suggestion=\"app.run(debug=False, host='0.0.0.0', port=8080, threaded=True)\"",
+          "id='37821d4a-917e-44ba-84d8-7334e0095cc3' title='Bandit B201: flask_debug_true' description='A Flask app appears to be run with debug=True, which exposes the Werkzeug debugger and allows the execution of arbitrary code.' vulnerability_type=<VulnerabilityType.CODE_INJECTION: 'code_injection'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.7999999999999999 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=238, end_line=238, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B201' cwe_id=None owasp_category=None code_snippet=\"237     # \ud83d\udea8 MEDIUM: Debug mode enabled in production\\n238     app.run(debug=True, host='0.0.0.0', port=5000)\\n\" surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B201', 'bandit_test_name': 'flask_debug_true', 'bandit_confidence': 'MEDIUM', 'bandit_severity': 'HIGH', 'llm_validated': True, 'llm_confidence_boost': 0.1} remediation_advice='Set debug mode to False in production environments to prevent arbitrary code execution. Ensure that debug mode is only enabled in development environments.' fix_suggestion=\"app.run(debug=False, host='0.0.0.0', port=5000)\""
+        ]
+      ],
+      [
+        "hardcoded_secrets",
+        [
+          "id='c7630a5e-f26d-438c-9e77-dbc25accff19' title='Bandit B105: hardcoded_password_string' description=\"Possible hardcoded password: 'super_secret_jwt_key_2023_production'\" vulnerability_type=<VulnerabilityType.HARDCODED_SECRETS: 'hardcoded_secrets'> severity=<SeverityLevel.LOW: 'low'> confidence=0.7 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=19, end_line=19, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B105' cwe_id=None owasp_category=None code_snippet='18 # \ud83d\udea8 CRITICAL: Hardcoded JWT secret in production code\\n19 JWT_SECRET = \"super_secret_jwt_key_2023_production\"\\n20 \\n' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B105', 'bandit_test_name': 'hardcoded_password_string', 'bandit_confidence': 'MEDIUM', 'bandit_severity': 'LOW'} remediation_advice=None fix_suggestion=None",
+          "id='83d6c701-1ab5-4b39-a36f-2912f3e6639c' title='Semgrep: python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret' description='' vulnerability_type=<VulnerabilityType.HARDCODED_SECRETS: 'hardcoded_secrets'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.85 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=141, end_line=141, start_column=17, end_column=48) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret', 'semgrep_severity': 'ERROR', 'extra': {'message': 'Hardcoded JWT secret or private key is used. This is a Insufficiently Protected Credentials weakness: https://cwe.mitre.org/data/definitions/522.html Consider using an appropriate security mechanism to protect the credentials (e.g. keeping secrets in environment variables)', 'metadata': {'cwe': ['CWE-522: Insufficiently Protected Credentials'], 'owasp': ['A02:2017 - Broken Authentication', 'A04:2021 - Insecure Design'], 'references': ['https://semgrep.dev/blog/2020/hardcoded-secrets-unverified-tokens-and-other-common-jwt-mistakes/'], 'category': 'security', 'technology': ['jwt'], 'cwe2021-top25': True, 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Cryptographic Issues'], 'source': 'https://semgrep.dev/r/python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret', 'shortlink': 'https://sg.run/l2E9'}, 'severity': 'ERROR', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}} remediation_advice=None fix_suggestion=None",
+          "id='83d6c701-1ab5-4b39-a36f-2912f3e6639c' title='Semgrep: python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret' description='' vulnerability_type=<VulnerabilityType.HARDCODED_SECRETS: 'hardcoded_secrets'> severity=<SeverityLevel.HIGH: 'high'> confidence=0.95 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=141, end_line=141, start_column=17, end_column=48) source_tool=<SourceTool.SEMGREP: 'semgrep'> rule_id='python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret' cwe_id=None owasp_category=None code_snippet='requires login' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 27, 49686) metadata={'semgrep_rule_id': 'python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret', 'semgrep_severity': 'ERROR', 'extra': {'message': 'Hardcoded JWT secret or private key is used. This is a Insufficiently Protected Credentials weakness: https://cwe.mitre.org/data/definitions/522.html Consider using an appropriate security mechanism to protect the credentials (e.g. keeping secrets in environment variables)', 'metadata': {'cwe': ['CWE-522: Insufficiently Protected Credentials'], 'owasp': ['A02:2017 - Broken Authentication', 'A04:2021 - Insecure Design'], 'references': ['https://semgrep.dev/blog/2020/hardcoded-secrets-unverified-tokens-and-other-common-jwt-mistakes/'], 'category': 'security', 'technology': ['jwt'], 'cwe2021-top25': True, 'subcategory': ['vuln'], 'likelihood': 'HIGH', 'impact': 'MEDIUM', 'confidence': 'HIGH', 'license': 'Semgrep Rules License v1.0. For more details, visit semgrep.dev/legal/rules-license', 'vulnerability_class': ['Cryptographic Issues'], 'source': 'https://semgrep.dev/r/python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret', 'shortlink': 'https://sg.run/l2E9'}, 'severity': 'ERROR', 'fingerprint': 'requires login', 'lines': 'requires login', 'validation_state': 'NO_VALIDATOR', 'engine_kind': 'OSS'}, 'llm_validated': True, 'llm_confidence_boost': 0.1} remediation_advice='Remove hardcoded secrets from the code and store them securely using environment variables or a secrets manager. Ensure that secrets are not committed to version control systems.' fix_suggestion=\"Replace `secret_key = 'hardcoded_secret_here'` with `secret_key = os.environ['JWT_SECRET_KEY']` and set the `JWT_SECRET_KEY` environment variable securely.\""
+        ]
+      ],
+      [
+        "sql_injection",
+        [
+          "id='f521927d-229d-4998-a777-bcd51f9c890c' title='Bandit B608: hardcoded_sql_expressions' description='Possible SQL injection vector through string-based query construction.' vulnerability_type=<VulnerabilityType.SQL_INJECTION: 'sql_injection'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.5 confidence_level=<ConfidenceLevel.MEDIUM: 'medium'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=75, end_line=75, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B608' cwe_id=None owasp_category=None code_snippet='74         # Allows authentication bypass with payloads like: \\' OR \\'1\\'=\\'1\\' --\\n75         query = f\"\"\"\\n76             SELECT id, username, email, role, is_admin, failed_login_attempts, account_locked\\n77             FROM users \\n78             WHERE username = \\'{username}\\' AND password_hash = \\'{password}\\'\\n79         \"\"\"\\n80         \\n' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B608', 'bandit_test_name': 'hardcoded_sql_expressions', 'bandit_confidence': 'LOW', 'bandit_severity': 'MEDIUM'} remediation_advice=None fix_suggestion=None",
+          "id='f19b31cd-7a78-44a9-9838-66c1041deb20' title='Bandit B608: hardcoded_sql_expressions' description='Possible SQL injection vector through string-based query construction.' vulnerability_type=<VulnerabilityType.SQL_INJECTION: 'sql_injection'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.5 confidence_level=<ConfidenceLevel.MEDIUM: 'medium'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/database_layer.py'), start_line=176, end_line=176, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B608' cwe_id=None owasp_category=None code_snippet='175         # Allows data extraction from other tables\\n176         query = f\"\"\"\\n177             SELECT \\n178                 customer_id,\\n179                 account_number,\\n180                 account_type,\\n181                 balance,\\n182                 status\\n183             FROM customer_accounts \\n184             WHERE customer_id = {customer_identifier} OR account_number = \\'{customer_identifier}\\'\\n185         \"\"\"\\n186         \\n' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B608', 'bandit_test_name': 'hardcoded_sql_expressions', 'bandit_confidence': 'LOW', 'bandit_severity': 'MEDIUM'} remediation_advice=None fix_suggestion=None",
+          "id='8c36c78a-d8d4-456e-aa66-189b6e34601f' title='Bandit B608: hardcoded_sql_expressions' description='Possible SQL injection vector through string-based query construction.' vulnerability_type=<VulnerabilityType.SQL_INJECTION: 'sql_injection'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.5 confidence_level=<ConfidenceLevel.MEDIUM: 'medium'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/database_layer.py'), start_line=189, end_line=189, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B608' cwe_id=None owasp_category=None code_snippet='188             # Add sensitive financial data\\n189             query = f\"\"\"\\n190                 SELECT \\n191                     customer_id,\\n192                     account_number,\\n193                     account_type,\\n194                     balance,\\n195                     credit_limit,\\n196                     status,\\n197                     \\'SENSITIVE\\' as data_type\\n198                 FROM customer_accounts \\n199                 WHERE customer_id = {customer_identifier} OR account_number = \\'{customer_identifier}\\'\\n200             \"\"\"\\n201         \\n' surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B608', 'bandit_test_name': 'hardcoded_sql_expressions', 'bandit_confidence': 'LOW', 'bandit_severity': 'MEDIUM'} remediation_advice=None fix_suggestion=None"
+        ]
+      ],
+      [
+        "broken_access_control",
+        [
+          "id='20874744-6a1d-4ff5-afb2-ef9c27183cd8' title='Bandit B104: hardcoded_bind_all_interfaces' description='Possible binding to all interfaces.' vulnerability_type=<VulnerabilityType.BROKEN_ACCESS_CONTROL: 'broken_access_control'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.7 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/api_security.py'), start_line=185, end_line=185, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B104' cwe_id=None owasp_category=None code_snippet=\"184     # \ud83d\udea8 MEDIUM: Insecure server configuration\\n185     app.run(debug=True, host='0.0.0.0', port=8080, threaded=True)\\n\" surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B104', 'bandit_test_name': 'hardcoded_bind_all_interfaces', 'bandit_confidence': 'MEDIUM', 'bandit_severity': 'MEDIUM'} remediation_advice=None fix_suggestion=None",
+          "id='1fda6c8e-6978-4c1d-b276-9494ca47c5c9' title='Bandit B104: hardcoded_bind_all_interfaces' description='Possible binding to all interfaces.' vulnerability_type=<VulnerabilityType.BROKEN_ACCESS_CONTROL: 'broken_access_control'> severity=<SeverityLevel.MEDIUM: 'medium'> confidence=0.7 confidence_level=<ConfidenceLevel.HIGH: 'high'> location=Location(file_path=WindowsPath('C:/Users/hp/AppData/Local/Temp/tmpjej2i7ve/auth_service.py'), start_line=238, end_line=238, start_column=None, end_column=None) source_tool=<SourceTool.BANDIT: 'bandit'> rule_id='B104' cwe_id=None owasp_category=None code_snippet=\"237     # \ud83d\udea8 MEDIUM: Debug mode enabled in production\\n238     app.run(debug=True, host='0.0.0.0', port=5000)\\n\" surrounding_code=None created_at=datetime.datetime(2025, 8, 24, 12, 26, 14, 41737) metadata={'bandit_test_id': 'B104', 'bandit_test_name': 'hardcoded_bind_all_interfaces', 'bandit_confidence': 'MEDIUM', 'bandit_severity': 'MEDIUM'} remediation_advice=None fix_suggestion=None"
+        ]
+      ]
+    ],
+    "chunking_metrics": {
+      "total_chunks": 8,
+      "total_tokens": 4217,
+      "files_processed": 3,
+      "avg_chunks_per_file": 2.6666666666666665
+    },
+    "tools_used": [
+      "semgrep",
+      "bandit"
+    ],
+    "groq_available": true,
+    "tokens_used": 840,
+    "model_used": "llama3-70b-8192",
+    "structured_analysis": false,
+    "response_length": 1025,
+    "sample_analysis": "Here is the analysis result:\n\n```\n{\n  \"vulnerabilities\": [\n    {\n      \"vulnerability\": \"SQL Injection\",\n      \"severity\": \"Critical\",\n      \"confidence\": 0.9,\n      \"explanation\": \"The authentication query is constructed using string formatting, allowing an attacker to inject malicious SQL code by ..."
+  },
+  "findings_summary": [
+    {
+      "title": "Bandit B201: flask_debug_true",
+      "severity": "high",
+      "type": "code_injection",
+      "file": "api_security.py",
+      "line": 185,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B104: hardcoded_bind_all_interfaces",
+      "severity": "medium",
+      "type": "broken_access_control",
+      "file": "api_security.py",
+      "line": 185,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B105: hardcoded_password_string",
+      "severity": "low",
+      "type": "hardcoded_secrets",
+      "file": "auth_service.py",
+      "line": 19,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B608: hardcoded_sql_expressions",
+      "severity": "medium",
+      "type": "sql_injection",
+      "file": "auth_service.py",
+      "line": 75,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B201: flask_debug_true",
+      "severity": "high",
+      "type": "code_injection",
+      "file": "auth_service.py",
+      "line": 238,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B104: hardcoded_bind_all_interfaces",
+      "severity": "medium",
+      "type": "broken_access_control",
+      "file": "auth_service.py",
+      "line": 238,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B608: hardcoded_sql_expressions",
+      "severity": "medium",
+      "type": "sql_injection",
+      "file": "database_layer.py",
+      "line": 176,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B608: hardcoded_sql_expressions",
+      "severity": "medium",
+      "type": "sql_injection",
+      "file": "database_layer.py",
+      "line": 189,
+      "tool": "bandit"
+    },
+    {
+      "title": "Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host",
+      "severity": "medium",
+      "type": "other",
+      "file": "api_security.py",
+      "line": 185,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query",
+      "severity": "medium",
+      "type": "other",
+      "file": "auth_service.py",
+      "line": 84,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret",
+      "severity": "high",
+      "type": "hardcoded_secrets",
+      "file": "auth_service.py",
+      "line": 141,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.jwt.security.unverified-jwt-decode.unverified-jwt-decode",
+      "severity": "high",
+      "type": "other",
+      "file": "auth_service.py",
+      "line": 149,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host",
+      "severity": "medium",
+      "type": "other",
+      "file": "auth_service.py",
+      "line": 238,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query",
+      "severity": "medium",
+      "type": "other",
+      "file": "database_layer.py",
+      "line": 205,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.jwt.security.jwt-hardcode.jwt-python-hardcoded-secret",
+      "severity": "high",
+      "type": "hardcoded_secrets",
+      "file": "auth_service.py",
+      "line": 141,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.jwt.security.unverified-jwt-decode.unverified-jwt-decode",
+      "severity": "high",
+      "type": "other",
+      "file": "auth_service.py",
+      "line": 149,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Bandit B201: flask_debug_true",
+      "severity": "high",
+      "type": "code_injection",
+      "file": "api_security.py",
+      "line": 185,
+      "tool": "bandit"
+    },
+    {
+      "title": "Bandit B201: flask_debug_true",
+      "severity": "high",
+      "type": "code_injection",
+      "file": "auth_service.py",
+      "line": 238,
+      "tool": "bandit"
+    },
+    {
+      "title": "Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host",
+      "severity": "medium",
+      "type": "other",
+      "file": "api_security.py",
+      "line": 185,
+      "tool": "semgrep"
+    },
+    {
+      "title": "Semgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host",
+      "severity": "medium",
+      "type": "other",
+      "file": "auth_service.py",
+      "line": 238,
+      "tool": "semgrep"
+    }
+  ],
+  "chunking_details": [
+    {
+      "file": "api_security.py",
+      "strategy": "function_based",
+      "chunks": 6,
+      "tokens": 1425,
+      "processing_time": 19.366979598999023
+    },
+    {
+      "file": "auth_service.py",
+      "strategy": "ast_aware",
+      "chunks": 1,
+      "tokens": 1075,
+      "processing_time": 13.02647590637207
+    },
+    {
+      "file": "database_layer.py",
+      "strategy": "ast_aware",
+      "chunks": 1,
+      "tokens": 1717,
+      "processing_time": 13.893365859985352
+    }
+  ]
+}

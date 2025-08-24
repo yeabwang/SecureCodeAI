@@ -1,0 +1,64 @@
+{
+  "static": {
+    "total_findings": 41,
+    "high_severity": 19,
+    "medium_severity": 17,
+    "low_severity": 5,
+    "tools_used": [
+      "semgrep",
+      "bandit"
+    ],
+    "vulnerability_types": [
+      "sql_injection",
+      "other",
+      "command_injection",
+      "weak_cryptography",
+      "broken_access_control",
+      "hardcoded_secrets",
+      "code_injection",
+      "path_traversal",
+      "insecure_randomness",
+      "unsafe_deserialization"
+    ],
+    "analysis_time": 17.297429084777832,
+    "llm_enhanced": false,
+    "files_analyzed": 4
+  },
+  "chunking": {
+    "total_chunks": 11,
+    "total_tokens": 1102,
+    "strategies_used": [
+      "semantic",
+      "function_based"
+    ],
+    "strategy_performance": {
+      "semantic": {
+        "files": 2,
+        "chunks": 4,
+        "time": 0.13216400146484375
+      },
+      "function_based": {
+        "files": 2,
+        "chunks": 7,
+        "time": 0.020926952362060547
+      }
+    },
+    "average_chunk_size": 100.18181818181819
+  },
+  "groq": {
+    "llm_available": true,
+    "model_used": "llama3-70b-8192",
+    "tokens_used": 1073,
+    "analysis_time": 2.265669345855713,
+    "response_length": 2560,
+    "finish_reason": "stop"
+  },
+  "cache": {
+    "cache_available": true,
+    "cold_cache_time": 0.03695082664489746,
+    "warm_cache_time": 0.0023300647735595703,
+    "speedup_factor": 15.858283024659777,
+    "cache_hit": false,
+    "chunks_consistent": true
+  }
+}
