@@ -180,8 +180,11 @@ python test_realistic_scenario.py
 - Multi-language AST parsing support
 
 
-#### Note
-This project is in active development and some of the tests contain real vurnabilities so please take caution when you work and test.
-Please leave a star if you like the project!
+## Notes
 
-Thanks for checking it out 💚
+**Security Warning**: Test files contain intentional vulnerabilities for demonstration purposes. Exercise caution when running tests.
+**Development Status**: Active development - so shit might happen, appoloigies in adance :)
+**Contributing**: Issues and pull requests welcome. Please star the repository if you find it useful.
+
+---
+*Built with ❤️*
