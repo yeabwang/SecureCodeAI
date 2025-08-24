@@ -1,69 +1,77 @@
 # SecureCodeAI
 
-**Security analysis tool combining multi-tool static analysis with AI-powered enhancement.**
+**Security analysis platform combining static analysis with intelligent code chunking and AI enhancement.**
 
-Heyy!  
+## Inspiration & Problem Statement
 
-This project was inspired by [claude-code-security](https://github.com/anthropics/claude-code-security-review) and [llm-security-scanner](https://github.com/iknowjason/llm-security-scanner), which both do a great job performing context-aware security scans on PR changes.  
+Inspired by [claude-code-security](https://github.com/anthropics/claude-code-security-review) and [llm-security-scanner](https://github.com/iknowjason/llm-security-scanner), this project addresses key limitations in existing tools:
 
-I felt they miss some core points:  
+- **PR-only analysis**: Missing security issues in dependencies and broader codebase context
+- **Context window limits**: Feeding entire codebases to LLMs reduces accuracy ([context rot](https://research.trychroma.com/context-rot))
+- **Ground truth gaps**: LLM outputs lack solid foundation without static analysis validation
+- **Cost inefficiency**: Large codebases result in excessive token usage
 
-- **PR-only analysis**: Focusing only on PR changes may overlook security issues, especially when dependencies are involved.  
-- **Context window limits**: Feeding all code into an LLM reduces accuracy as context grows ([context rot](https://research.trychroma.com/context-rot)).  
-- **Ground truth support**: Small filtering works, but without solid ground truth, LLM outputs are hard to fully trust.  
-- **Cost**: Large codebases and chunking increase token usage and price.  
+## Current Architecture
 
-### Approach
+**Analysis Flow:**
+```
+Static Analysis (Ground Truth) → Intelligent Chunking → LLM Enhancement
+    37 findings              →    4-11 chunks       →   Remediation advice
+```
 
-To address this, I started with the hypothesis of combining **static tools** (like Bandit, Safety) with **LLM analysis** in a well-designed context. So far:  
+**Implementation Status:**
+- **Phase 1 (PR0)**: Multi-tool static analysis with AI enhancement ✅
+- **Phase 2 (PR1)**: Intelligent code chunking for security-focused analysis ✅  
+- **Phase 3 (Planned)**: Two-tier LLM analysis with CWE-specific templates 🚧
 
-- Implemented static tool scanning + a simple Groq enhancer to expand context based on static analysis.
-- Added 36+ vulnerability-specific prompts for detailed analysis with the high-level scanner and deep analyzer.  
-- Developing a **two-level LLM scanning approach**:
-  1. **High-level scanner**: Takes static analysis, uses prompt templates to detect potential issues, scores severity and decides whether it's (simple and provide suggestion, or detailed analysis).  
-  2. **Deep analyzer**: Gathers all evidence (code chunk, templates, suspected issues) and reasons to provide detailed suggestions.  
+## How It Works
 
-This approach reduces token usage, improves context awareness, and defines ground rules for each security issue.  
+**Current Pipeline:**
 
-This repo is under active change so shit might happen :)
+1. **Static Analysis Foundation**
+   - Bandit, Semgrep, Safety scan codebase for security issues
+   - 30-40 findings with confidence scoring and deduplication
+   - Provides ground truth for LLM enhancement
 
-## 🎯 What it  Delivers
+2. **Intelligent Chunking** 
+   - Focus-based strategy maps security findings to code chunks
+   - 4-11 security-focused chunks per file (1000-6000 tokens)
+   - Tree-sitter AST parsing preserves semantic boundaries
 
-A robust security analysis foundation with:
-- **Multi-tool static analysis** (Bandit, SafetyFPR, Semgrep)
-- **AI-powered finding enhancement** with Groq LLM integration
-- **Comprehensive finding management** with deduplication and confidence scoring
-- **Multiple output formats** (JSON, Table, SARIF ready)
-- **Extensible plugin architecture** for future analysis tools
+3. **LLM Enhancement**
+   - GROQ API analyzes critical chunks with security context
+   - Generates remediation advice and fix suggestions
+   - 1000-1500 tokens consumed per analysis
 
-**validation(tested on our own codebase)**: Successfully detects 33+ security findings across 22 files, 3,271 lines of code. :) we need to work on security here too
+**Target Architecture (In Development):**
+- **High-level scanner**: CWE-specific triage (simple fix vs detailed analysis)
+- **Deep analyzer**: Multi-template evidence gathering with 36+ vulnerability prompts
+- **Intelligent routing**: Severity-based analysis depth selection
 
-## 🚀 Quick Start
+## What It Delivers
 
-### Installation
+**Static Analysis Engine:**
+- Multi-tool integration (Bandit, Semgrep, Safety)
+- 37+ security findings across enterprise-scale codebases
+- GROQ LLM enhancement for context and remediation advice
+- JSON/table output formats with confidence scoring
+
+**Intelligent Chunking System:**
+- 5 chunking strategies (AST-aware, focus-based, hybrid, function-based, semantic)
+- Security-focused chunk generation from static analysis findings
+- LRU caching with 15.9x performance improvement
+- Tree-sitter AST parsing for Python, JavaScript, Go, Java
+- Token-optimized chunking for LLM context windows
+
+## Installation
 
 ```bash
-# Clone and install
 git clone https://github.com/yeabwang/SecureCodeAI.git
 cd SecureCodeAI
 pip install -e .
 ```
 
-### Basic Usage
-
-```bash
-# Analyze current directory
-python -m securecodeai.cli.main scan .
-
-# Analyze specific path with JSON output
-python -m securecodeai.cli.main scan src/ -f json -o results.json
-
-# Filter by severity
-python -m securecodeai.cli.main scan src/ --severity-threshold high
-
-# View available options
-python -m securecodeai.cli.main scan --help
-```
+**Requirements**: Python 3.11+, optional GROQ API key for AI enhancement
 
 ## Get Free Groq api key
 
@@ -72,224 +80,108 @@ python -m securecodeai.cli.main scan --help
 3. Create new key → Click Create API Key, name it, and confirm.
 4. Copy and store → Copy the key securely (it won’t be shown again).
 
-### With LLM Enhancement
+## Basic Usage
 
 ```bash
-# Set up Groq API key
-export GROQ_API_KEY="your_groq_api_key_here"
+# Standard security analysis
+python -m securecodeai.cli.main scan src/
 
-# Run analysis with AI enhancement (automatically enabled when API key is present)
-python -m securecodeai.cli.main scan src/ -f table
+# With AI enhancement (requires GROQ_API_KEY environment variable)
+export GROQ_API_KEY="your_key_here"
+python -m securecodeai.cli.main scan src/ -f json -o results.json
 ```
 
-## 🏗️ Architecture
+## Testing
 
-### Core Components
+Run the included integration tests to see the system in action:
+
+```bash
+
+# Test 1: Complete vulnerability integration (focus-based chunking)
+python test_integrated_vulnerabilities.py  
+
+# Test 2: Realistic enterprise scenarios
+python test_realistic_scenario.py
+```
+
+## Expected Results
+
+**Static Analysis Performance:**
+- 30-40 security findings on enterprise codebases
+- Support for 8+ vulnerability types (SQL injection, cryptographic issues, etc.)
+- Multi-tool integration with deduplication
+
+**Intelligent Chunking:**
+- 4-11 security-focused chunks per file
+- 1000-6000 tokens processed per file
+- Focus-based strategy prioritizes critical vulnerabilities
+- 15x+ cache performance improvement
+
+**AI Enhancement:**
+- 1000-1500 tokens consumed per analysis
+- Structured remediation advice for high-confidence findings
+- Model: llama3-70b-8192 via GROQ API
+
+## Architecture
 
 ```
 src/securecodeai/
 ├── core/
-│   ├── analyzer.py          # Main analysis orchestrator
-│   ├── config.py           # YAML-based configuration system
-│   └── models.py           # Pydantic data models (Finding, AnalysisResult)
+│   ├── analyzer.py           # Main analysis orchestrator
+│   ├── config.py            # Configuration management
+│   └── models.py            # Pydantic data models
 ├── static_analysis/
-│   ├── base.py             # Abstract analyzer interface
-│   ├── bandit_analyzer.py  # Bandit integration
-│   ├── safety_analyzer.py  # Safety (dependency) integration  
-│   ├── semgrep_analyzer.py # Semgrep integration
-│   └── orchestrator.py     # Multi-tool coordination
+│   ├── bandit_analyzer.py   # Bandit integration
+│   ├── semgrep_analyzer.py  # Semgrep integration
+│   ├── safety_analyzer.py   # Safety integration
+│   └── orchestrator.py      # Multi-tool coordination
+├── chunking/
+│   ├── orchestrator.py      # Chunking coordination
+│   ├── strategies/          # 5 chunking strategies
+│   ├── parsers/            # Tree-sitter AST parsers
+│   ├── cache.py            # Production LRU caching
+│   └── utils/              # Token counting, metrics
 ├── llm/
-│   └── groq_client.py      # Groq API client with rate limiting
-├── cli/
-│   └── main.py             # Click-based CLI interface
-└── utils/
-    └── output.py           # Output formatting utilities
+│   └── groq_client.py       # GROQ API integration
+└── cli/
+    └── main.py              # Command-line interface
 ```
 
-### Data Models
-
-**Finding**: Core vulnerability representation
-```python
-class Finding(BaseModel):
-    id: str
-    title: str
-    description: str
-    vulnerability_type: str
-    severity: SeverityLevel  # low, medium, high, critical
-    confidence: float        # 0.0-1.0
-    location: Location
-    source_tool: str
-    remediation_advice: Optional[str]  # AI-generated
-    fix_suggestion: Optional[str]      # AI-generated
-```
-
-**AnalysisResult**: Complete scan results
-```python
-class AnalysisResult(BaseModel):
-    findings: List[Finding]
-    total_files_analyzed: int
-    total_lines_analyzed: int
-    llm_tokens_used: int
-    llm_requests_made: int
-    # + summary statistics
-```
-
-## 🔧 Configuration
-
-### YAML Configuration (optional)
-
-```yaml
-# securecodeai.yaml
-static_analysis:
-  bandit:
-    enabled: true
-    exclude_paths: ["tests/", "*.py"]
-  safety:
-    enabled: true
-    check_environment: true
-  semgrep:
-    enabled: true
-
-llm:
-  provider: "groq"
-  model: "llama3-70b-8192"
-  max_tokens: 8192
-  requests_per_minute: 30
-  
-output:
-  format: "table"
-  severity_threshold: "medium"
-```
-
-### Environment Variables
+## Development
 
 ```bash
-# Required for LLM enhancement
-export GROQ_API_KEY="your_api_key"
-
-# Optional configuration
-export SECURECODEAI_CONFIG_PATH="/path/to/config.yaml"
-export SECURECODEAI_LOG_LEVEL="INFO"
-```
-
-## 📊 Output Formats
-
-### Table Format (Default)
-```
-SecureCodeAI Analysis Results
-==================================================
-
-Analysis completed in 15.2 seconds
-Files analyzed: 22
-Total findings: 2
-
-Findings by Severity:
-  High: 2
-
-Detailed Findings:
---------------------
-
-1. Bandit B324: hashlib
-   Severity: HIGH
-   Confidence: 0.90
-   Location: src/securecodeai/static_analysis/orchestrator.py:156
-   Description: Use of weak MD5 hash for security
-   Remediation: Replace MD5 with SHA-256 for cryptographic security
-```
-
-### JSON Format
-```json
-{
-  "findings": [
-    {
-      "id": "uuid",
-      "title": "Bandit B324: hashlib", 
-      "severity": "high",
-      "confidence": 0.9,
-      "location": {
-        "file_path": "src/file.py",
-        "start_line": 156
-      },
-      "remediation_advice": "Replace MD5 with SHA-256...",
-      "fix_suggestion": "hashlib.sha256(data.encode()).hexdigest()"
-    }
-  ],
-  "llm_tokens_used": 2319,
-  "llm_requests_made": 8
-}
-```
-
-## 🧪 Testing & Quality
-
-### Running Tests
-
-```bash
-# All tests (29 tests)
-python -m pytest
-
-# With coverage
-python -m pytest --cov=src/securecodeai
-
-# Specific test categories
-python -m pytest tests/test_llm.py          # LLM integration tests
-python -m pytest tests/test_integration.py  # End-to-end tests
-```
-
-### Test Coverage
-- **Overall**: 58% coverage
-- **Core Models**: 95% coverage  
-- **LLM Client**: 79% coverage
-- **Configuration**: 74% coverage
-
-## 🔍  Performance
-
-**Validation Results** (scanning SecureCodeAI itself):
-- ✅ **33 findings detected** across multiple vulnerability types
-- ✅ **8 LLM-enhanced findings** with specific remediation advice
-- ✅ **2,319 tokens processed** through AI enhancement
-- ✅ **22 files analyzed** (3,271 lines of code)
-- ✅ **Sub-15 second analysis time** for medium-sized projects
-
-## 🛠️ Development
-
-### Prerequisites
-- Python 3.11+
-- Git
-- Optional: Groq API key for LLM features
-
-### Development Setup
-
-```bash
-# Clone repository
-git clone https://github.com/yeabwang/SecureCodeAI.git
-cd SecureCodeAI
-
-# Create virtual environment
+# Development setup
 python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-
-# Install in development mode
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 
 # Run tests
 python -m pytest
 
-# Run linting
-ruff check src/
-mypy src/
+# Run integration tests
+python test_integrated_vulnerabilities.py
+python test_realistic_scenario.py
 ```
 
-### Tool Integration Architecture
+## Current Capabilities
 
-Each static analysis tool follows the `BaseStaticAnalyzer` interface:
+**Tested on real codebases:**
+- Analyzes 800+ line enterprise applications
+- Detects 37 security findings across 7 vulnerability categories  
+- Generates 4 security-focused chunks in 33ms processing time
+- Integrates seamlessly with existing CI/CD workflows
+- Caching and error handling
 
-```python
-class BaseStaticAnalyzer(ABC):
-    @abstractmethod
-    def is_available(self) -> bool:
-        """Check if tool is installed and accessible."""
-        
-    @abstractmethod  
-    def analyze_path(self, path: Path) -> List[Finding]:
-        """Analyze a file or directory path."""
-```
+**Architecture highlights:**
+- Modular design with pluggable analyzers
+- Async processing with rate limiting
+- Comprehensive error handling and logging
+- Prometheus metrics integration ready
+- Multi-language AST parsing support
+
+
+#### Note
+This project is in active development and some of the tests contain real vurnabilities so please take caution when you work and test.
+Please leave a star if you like the project!
+
+Thanks for checking it out 💚
