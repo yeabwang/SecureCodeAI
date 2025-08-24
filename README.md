@@ -96,6 +96,8 @@ python -m securecodeai.cli.main scan src/ -f json -o results.json
 Run the included integration tests to see the system in action:
 
 ```bash
+# Quick CLI test with sample vulnerable file
+python -m securecodeai.cli.main scan test_sample.py
 
 # Test 1: Complete vulnerability integration (focus-based chunking)
 python test_integrated_vulnerabilities.py  
