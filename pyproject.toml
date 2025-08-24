@@ -47,6 +47,15 @@ dependencies = [
     "tree-sitter>=0.20.0",
     "gitpython>=3.1.0",
     
+    # Monitoring and Metrics
+    "prometheus_client>=0.17.0",
+    
+    # Cryptography (for test vulnerability examples)
+    "pycryptodome>=3.19.0",
+    
+    # Web framework (for test vulnerability examples)
+    "flask>=2.3.0",
+    
     # Output Formats
     "sarif-om>=1.0.4",
     
