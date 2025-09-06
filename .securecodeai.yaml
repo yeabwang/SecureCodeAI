@@ -1,0 +1,70 @@
+# SecureCodeAI Configuration File
+# Main configuration for LLM and analysis settings
+
+llm:
+  provider: "groq"
+  model: "llama-3.1-8b-instant"
+  max_tokens: 4096
+  temperature: 0.1
+  timeout_seconds: 30
+  max_retries: 3
+  retry_delay: 1.0
+  requests_per_minute: 60
+  tokens_per_minute: 50000
+  enable_classification: true
+  enable_detailed_analysis: true
+  enable_cross_validation: true
+  minimum_confidence_threshold: 0.3
+
+static_analysis:
+  enable_bandit: true
+  enable_safety: true
+  enable_semgrep: true
+  bandit_exclude_paths:
+    - "*/tests/*"
+    - "*/test_*"
+  bandit_skip_tests: true
+  safety_db_update: true
+  semgrep_rules:
+    - "auto"
+
+scan:
+  mode: "full"
+  target_extensions:
+    - ".py"
+    - ".js"
+    - ".ts"
+    - ".jsx"
+    - ".tsx"
+    - ".java"
+    - ".go"
+    - ".php"
+  exclude_patterns:
+    - "*/node_modules/*"
+    - "*/.git/*"
+    - "*/venv/*"
+    - "*/__pycache__/*"
+    - "*/dist/*"
+    - "*/build/*"
+    - "*/target/*"
+  max_file_size_mb: 10
+  parallel_workers: 4
+  severity_threshold: "low"
+  confidence_threshold: 0.3
+  max_chunk_size: 4000
+  chunk_overlap: 200
+  enable_smart_chunking: true
+
+output:
+  format: "table"
+  include_code_snippets: true
+  include_remediation: true
+  show_statistics: true
+  group_by_file: false
+  sort_by_severity: true
+  verbose: false
+  quiet: false
+  show_progress: true
+
+log_level: "INFO"
+cache_enabled: true
